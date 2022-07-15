@@ -50,6 +50,9 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     uint256 public currentPhase = 1;
     uint256 public totalPhaseNumber = 2;
 
+    string public hiddenURI =
+        "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp";
+
     constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
         // _name = "HMI";
         // _symbol = "HMI";
@@ -135,8 +138,8 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
             uint256 _phase = i + 1;
             bool _revealed = _phaseInfo[_phase].revealed;
 
-            if (_revealed) {
-                return _phaseInfo[_phase].tokenURI;
+            if (!_revealed) {
+                return getTokenURI(_tokenId, hiddenURI);
             }
             uint256 _phaseMaxSupply = _phaseInfo[_phase].phaseMaxSupply;
 
@@ -162,7 +165,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         publicM = !publicM;
     }
 
-    function publicSaleMint(uint256 _mintAmount)
+    function publicSaleMint(uint256 _mintAmount, address _to)
         public
         payable
         mintCompliance(_mintAmount)
@@ -171,7 +174,8 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     {
         require(!paused, "HMI: Contract is paused");
         require(publicM, "HMI: The public sale is not enabled!");
-        _safeMint(msg.sender, _mintAmount);
+        _safeMint(_to, _mintAmount);
+        // _safeMint(msg.sender, _mintAmount);
     }
 
     function presaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
@@ -296,7 +300,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         public
         view
         virtual
-        override(ERC721A, IERC165, IERC721A)
+        override(ERC721A, IERC165)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
