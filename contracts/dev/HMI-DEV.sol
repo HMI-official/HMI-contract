@@ -61,20 +61,66 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         setPresalePrice(ether001.mul(7).div(10)); // => 0.007 ether
         maxSupply = 3333;
         setMaxMintAmountPerTx(5);
+        //     setPhaseInfo(uint256 _phase,uint256 _phaseMaxSupply,
+        //     string memory _tokenURI,uint256 _publicSalePriceForEther,
+        //     uint256 _presalePriceForEther, bool _revealed)
+        setPhaseInfo(
+            1,
+            1111,
+            "phase1-token-uri",
+            ether001,
+            ether001.mul(7).div(10),
+            false
+        );
+        setPhaseInfo(
+            2,
+            2222,
+            "phase2-token-uri",
+            ether001,
+            ether001.mul(7).div(10),
+            false
+        );
+        setPhaseInfo(
+            3,
+            3333,
+            "phase2-token-uri",
+            ether001,
+            ether001.mul(7).div(10),
+            false
+        );
     }
 
-    // FIXME: modifiers
-    modifier mintCompliance(uint256 _mintAmount) {
+    // 필수
+    modifier mintCompliance(uint256 _mintAmount, uint256 _maxSupplyByPhase) {
+        uint256 _totalSupply = totalSupply();
+
         require(
             _mintAmount > 0 && _mintAmount < maxMintAmountPerTx + 1,
-            "Invalid mint amount!"
+            "HMI: Invalid mint amount per tx!"
         );
         require(
-            totalSupply() + _mintAmount < maxSupply + 1,
-            "Max supply exceeded!"
+            _totalSupply + _mintAmount < _maxSupplyByPhase + 1,
+            "HMI: Max supply exceeded by phase!"
+        );
+        require(
+            _totalSupply + _mintAmount < maxSupply + 1,
+            "HMI: Max supply exceeded!"
         );
         _;
     }
+
+    // FIXME: modifiers
+    // modifier mintCompliance(uint256 _mintAmount) {
+    //     require(
+    //         _mintAmount > 0 && _mintAmount < maxMintAmountPerTx + 1,
+    //         "Invalid mint amount!"
+    //     );
+    //     require(
+    //         totalSupply() + _mintAmount < maxSupply + 1,
+    //         "Max supply exceeded!"
+    //     );
+    //     _;
+    // }
 
     modifier mintPriceCompliance(uint256 price, uint256 _mintAmount) {
         require(msg.value >= price * _mintAmount, "Not ennough ether!");
@@ -165,10 +211,16 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         publicM = !publicM;
     }
 
+    // modifier mintCompliance(
+    //     uint256 _mintAmount,
+    //     uint256 _maxMintAmountPerWallet,
+    //     uint256 _maxSupplyByPhase
+    // )
+
     function publicSaleMint(uint256 _mintAmount, address _to)
         public
         payable
-        mintCompliance(_mintAmount)
+        mintCompliance(_mintAmount, _phaseInfo[currentPhase].phaseMaxSupply)
         mintPriceCompliance(publicSalePrice, _mintAmount)
         onlyAccounts
     {
@@ -181,7 +233,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     function presaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
         public
         payable
-        mintCompliance(_mintAmount)
+        mintCompliance(_mintAmount, _phaseInfo[currentPhase].phaseMaxSupply)
         mintPriceCompliance(presalePrice, _mintAmount)
         isValidMerkleProof(_merkleProof)
         onlyAccounts
