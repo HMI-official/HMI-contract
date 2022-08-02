@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// ERC721A Contracts v4.1.0
+// ERC721A Contracts v4.2.0
 // Creator: Chiru Labs
 
 pragma solidity ^0.8.4;
@@ -8,7 +8,8 @@ import './IERC721AQueryable.sol';
 import '../ERC721A.sol';
 
 /**
- * @title ERC721A Queryable
+ * @title ERC721AQueryable.
+ *
  * @dev ERC721A subclass with convenience query functions.
  */
 abstract contract ERC721AQueryable is ERC721A, IERC721AQueryable {
@@ -16,24 +17,27 @@ abstract contract ERC721AQueryable is ERC721A, IERC721AQueryable {
      * @dev Returns the `TokenOwnership` struct at `tokenId` without reverting.
      *
      * If the `tokenId` is out of bounds:
-     *   - `addr` = `address(0)`
-     *   - `startTimestamp` = `0`
-     *   - `burned` = `false`
-     *   - `extraData` = `0`
+     *
+     * - `addr = address(0)`
+     * - `startTimestamp = 0`
+     * - `burned = false`
+     * - `extraData = 0`
      *
      * If the `tokenId` is burned:
-     *   - `addr` = `<Address of owner before token was burned>`
-     *   - `startTimestamp` = `<Timestamp when token was burned>`
-     *   - `burned = `true`
-     *   - `extraData` = `<Extra data when token was burned>`
+     *
+     * - `addr = <Address of owner before token was burned>`
+     * - `startTimestamp = <Timestamp when token was burned>`
+     * - `burned = true`
+     * - `extraData = <Extra data when token was burned>`
      *
      * Otherwise:
-     *   - `addr` = `<Address of owner>`
-     *   - `startTimestamp` = `<Timestamp of start of ownership>`
-     *   - `burned = `false`
-     *   - `extraData` = `<Extra data at start of ownership>`
+     *
+     * - `addr = <Address of owner>`
+     * - `startTimestamp = <Timestamp of start of ownership>`
+     * - `burned = false`
+     * - `extraData = <Extra data at start of ownership>`
      */
-    function explicitOwnershipOf(uint256 tokenId) public view override returns (TokenOwnership memory) {
+    function explicitOwnershipOf(uint256 tokenId) public view virtual override returns (TokenOwnership memory) {
         TokenOwnership memory ownership;
         if (tokenId < _startTokenId() || tokenId >= _nextTokenId()) {
             return ownership;
@@ -49,7 +53,13 @@ abstract contract ERC721AQueryable is ERC721A, IERC721AQueryable {
      * @dev Returns an array of `TokenOwnership` structs at `tokenIds` in order.
      * See {ERC721AQueryable-explicitOwnershipOf}
      */
-    function explicitOwnershipsOf(uint256[] memory tokenIds) external view override returns (TokenOwnership[] memory) {
+    function explicitOwnershipsOf(uint256[] calldata tokenIds)
+        external
+        view
+        virtual
+        override
+        returns (TokenOwnership[] memory)
+    {
         unchecked {
             uint256 tokenIdsLength = tokenIds.length;
             TokenOwnership[] memory ownerships = new TokenOwnership[](tokenIdsLength);
@@ -70,13 +80,13 @@ abstract contract ERC721AQueryable is ERC721A, IERC721AQueryable {
      *
      * Requirements:
      *
-     * - `start` < `stop`
+     * - `start < stop`
      */
     function tokensOfOwnerIn(
         address owner,
         uint256 start,
         uint256 stop
-    ) external view override returns (uint256[] memory) {
+    ) external view virtual override returns (uint256[] memory) {
         unchecked {
             if (start >= stop) revert InvalidQueryRange();
             uint256 tokenIdsIdx;
@@ -136,14 +146,14 @@ abstract contract ERC721AQueryable is ERC721A, IERC721AQueryable {
     /**
      * @dev Returns an array of token IDs owned by `owner`.
      *
-     * This function scans the ownership mapping and is O(totalSupply) in complexity.
+     * This function scans the ownership mapping and is O(`totalSupply`) in complexity.
      * It is meant to be called off-chain.
      *
      * See {ERC721AQueryable-tokensOfOwnerIn} for splitting the scan into
      * multiple smaller scans if the collection is large enough to cause
-     * an out-of-gas error (10K pfp collections should be fine).
+     * an out-of-gas error (10K collections should be fine).
      */
-    function tokensOfOwner(address owner) external view override returns (uint256[] memory) {
+    function tokensOfOwner(address owner) external view virtual override returns (uint256[] memory) {
         unchecked {
             uint256 tokenIdsIdx;
             address currOwnershipAddr;

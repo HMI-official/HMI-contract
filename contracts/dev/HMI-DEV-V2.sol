@@ -16,42 +16,34 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    struct PhaseInfo {
-        uint256 phase;
-        uint256 phaseMaxSupply;
-        string tokenURI;
-        uint256 publicSalePrice;
-        uint256 presalePrice;
-        bool revealed;
-    }
-
     mapping(address => uint256) public _presaleClaimed;
-    mapping(uint256 => PhaseInfo) public _phaseInfo;
+    // mapping(uint256 => PhaseInfo) public _phaseInfo;
+    bool public revealed = false;
 
     bytes32 public merkleRoot;
     uint256 public maxSupply;
 
     // uint256[4] public tokenNumberByPhase;
     string public baseExtension = ".json";
+    string public baseURI;
+    string public hiddenURI =
+        "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp";
 
     // 1 ether = 100000000000000000
     uint256 public presalePrice;
     // uint256 public whiteListSaleStartTime;
     uint256 public publicSalePrice;
 
-    uint256 presaleAmountLimit = 15;
+    uint256 public presaleAmountLimit = 15;
     uint256 public maxMintAmountPerTx = 5;
     uint256 public royaltyFee = 1000; // 1000 is 10%
-    uint256 ether001 = 10**16;
+    uint256 public ether001 = 10**16;
 
     bool public paused = false;
     bool public presaleM = false;
     bool public publicM = false;
     uint256 public currentPhase = 1;
     uint256 public totalPhaseNumber = 3;
-
-    string public hiddenURI =
-        "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp";
 
     constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
         // _name = "HMI";
@@ -61,47 +53,17 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         setPresalePrice(ether001.mul(7).div(10)); // => 0.007 ether
         maxSupply = 3333;
         setMaxMintAmountPerTx(5);
-        //     setPhaseInfo(uint256 _phase,uint256 _phaseMaxSupply,
-        //     string memory _tokenURI,uint256 _publicSalePriceForEther,
-        //     uint256 _presalePriceForEther, bool _revealed)
-        setPhaseInfo(
-            1,
-            1111,
-            "phase1-token-uri",
-            ether001,
-            ether001.mul(7).div(10),
-            false
-        );
-        setPhaseInfo(
-            2,
-            2222,
-            "phase2-token-uri",
-            ether001,
-            ether001.mul(7).div(10),
-            false
-        );
-        setPhaseInfo(
-            3,
-            3333,
-            "phase2-token-uri",
-            ether001,
-            ether001.mul(7).div(10),
-            false
-        );
     }
 
     // 필수
-    modifier mintCompliance(uint256 _mintAmount, uint256 _maxSupplyByPhase) {
+    modifier mintCompliance(uint256 _mintAmount) {
         uint256 _totalSupply = totalSupply();
 
         require(
             _mintAmount > 0 && _mintAmount < maxMintAmountPerTx + 1,
             "HMI: Invalid mint amount per tx!"
         );
-        require(
-            _totalSupply + _mintAmount < _maxSupplyByPhase + 1,
-            "HMI: Max supply exceeded by phase!"
-        );
+
         require(
             _totalSupply + _mintAmount < maxSupply + 1,
             "HMI: Max supply exceeded!"
@@ -167,21 +129,17 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         );
         // 애초에 5000개에서 maxSupply막아버리면 의미 없고,
         // phase2에 uri안넣어둬도 의미 없어 so 그래서 그냥 내가 정해주면 될 듯
-        for (uint256 i = 0; i < totalPhaseNumber; i++) {
-            uint256 _phase = i + 1;
-            bool _revealed = _phaseInfo[_phase].revealed;
 
-            if (!_revealed) {
-                return getTokenURI(_tokenId, hiddenURI);
-            }
-            uint256 _phaseMaxSupply = _phaseInfo[_phase].phaseMaxSupply;
-
-            string memory _tokenURI = _phaseInfo[_phase].tokenURI;
-
-            if (_tokenId <= _phaseMaxSupply) {
-                return getTokenURI(_tokenId, _tokenURI);
-            }
+        if (!revealed) {
+            return getTokenURI(_tokenId, hiddenURI);
         }
+
+        // string memory _tokenURI = _phaseInfo[_phase].tokenURI;
+
+        if (_tokenId <= maxSupply) {
+            return getTokenURI(_tokenId, baseURI);
+        }
+        // }
         return " ";
     }
 
@@ -198,15 +156,10 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         publicM = !publicM;
     }
 
-    // modifier mintCompliance(
-    //     uint256 _mintAmount,
-    //     uint256 _maxSupplyByPhase
-    // )
-
     function publicSaleMint(uint256 _mintAmount, address _to)
         public
         payable
-        mintCompliance(_mintAmount, _phaseInfo[currentPhase].phaseMaxSupply)
+        mintCompliance(_mintAmount)
         mintPriceCompliance(publicSalePrice, _mintAmount)
         onlyAccounts
     {
@@ -219,7 +172,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     function presaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
         public
         payable
-        mintCompliance(_mintAmount, _phaseInfo[currentPhase].phaseMaxSupply)
+        mintCompliance(_mintAmount)
         mintPriceCompliance(presalePrice, _mintAmount)
         isValidMerkleProof(_merkleProof)
         onlyAccounts
@@ -251,37 +204,16 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         merkleRoot = _merkleRoot;
     }
 
-    function setTotalPhaseNumber(uint256 _totalPhaseNumber) public onlyOwner {
-        totalPhaseNumber = _totalPhaseNumber;
-    }
-
-    // 여기를 잘 수정해야 할듯  FIXME:
-    function setPhaseInfo(
-        uint256 _phase,
-        uint256 _phaseMaxSupply,
-        string memory _tokenURI,
-        uint256 _publicSalePriceForEther,
-        uint256 _presalePriceForEther,
-        bool _revealed
-    ) public onlyOwner {
-        // uint256 ether001 = 10**16;
-        // 100 ether001 = 0.01 ether
-        _phaseInfo[_phase].phase = _phase;
-        _phaseInfo[_phase].phaseMaxSupply = _phaseMaxSupply;
-        _phaseInfo[_phase].tokenURI = _tokenURI;
-        _phaseInfo[_phase].publicSalePrice = ether001.mul(
-            _publicSalePriceForEther
-        );
-        _phaseInfo[_phase].presalePrice = ether001.mul(_presalePriceForEther);
-        _phaseInfo[_phase].revealed = _revealed;
-    }
-
-    function setRevealed(uint256 _phase, bool _revealed) public onlyOwner {
-        _phaseInfo[_phase].revealed = _revealed;
-    }
-
     function _startTokenId() internal view virtual override returns (uint256) {
         return 1;
+    }
+
+    function setBaseURI(string memory _tokenBaseURI) public onlyOwner {
+        baseURI = _tokenBaseURI;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     function withdraw() public onlyOwner nonReentrant {
@@ -289,14 +221,6 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
             ""
         );
         require(success, "Transfer failed.");
-    }
-
-    function getTotalPhaseInfo(uint256 _phase)
-        public
-        view
-        returns (PhaseInfo memory)
-    {
-        return _phaseInfo[_phase];
     }
 
     function getTokenURI(uint256 _tokenId, string memory _tokenURI)
