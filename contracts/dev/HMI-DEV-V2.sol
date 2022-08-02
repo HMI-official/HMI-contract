@@ -47,7 +47,8 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     bool public publicM = false;
     bool public ogSaleM = false;
 
-    constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
+    constructor() ERC721A("HI PLANET", "HMI") {
+        // constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
         // _name = "HMI";
         // _symbol = "HMI";
         // ether001
@@ -180,7 +181,11 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         // _safeMint(msg.sender, _mintAmount);
     }
 
-    function presaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
+    function presaleMint(
+        uint256 _mintAmount,
+        bytes32[] calldata _merkleProof,
+        address _to
+    )
         public
         payable
         mintCompliance(_mintAmount)
@@ -191,24 +196,23 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         require(!paused, "HMI: Contract is paused");
         require(presaleM, "HMI: Presale is OFF");
         require(
-            _presaleClaimed[msg.sender] + _mintAmount <= presaleAmountLimit,
+            _presaleClaimed[_to] + _mintAmount <= presaleAmountLimit,
             "HMI: You can't mint so much tokens"
         );
 
-        _presaleClaimed[msg.sender] += _mintAmount;
-        _safeMint(msg.sender, _mintAmount);
+        _presaleClaimed[_to] += _mintAmount;
+        _safeMint(_to, _mintAmount);
     }
 
     function ogSaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
         public
         payable
         mintCompliance(_mintAmount)
-        mintPriceCompliance(presalePrice, _mintAmount)
         isValidMerkleProof(_merkleProof, ogMerkleRoot)
         onlyAccounts
     {
         require(!paused, "HMI: Contract is paused");
-        require(ogSaleM, "HMI: Presale is OFF");
+        require(ogSaleM, "HMI: og sale is OFF");
         require(
             _ogSaleClaimed[msg.sender] + _mintAmount <= ogSaleAmountLimit,
             "HMI: You can't mint so much tokens"
