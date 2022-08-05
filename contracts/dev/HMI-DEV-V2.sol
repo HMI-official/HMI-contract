@@ -16,8 +16,14 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     using Strings for uint256;
     using SafeMath for uint256;
 
+    // struct TokenInfo {
+    //     uint256 stakingBegin;
+    // }
+    mapping(uint256 => uint256) public _stakingBegin;
+
     mapping(address => uint256) public _presaleClaimed;
     mapping(address => uint256) public _ogSaleClaimed;
+
     // mapping(uint256 => PhaseInfo) public _phaseInfo;
     bool public revealed = false;
 
@@ -41,6 +47,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     uint256 public maxMintAmountPerTx = 5;
     uint256 public royaltyFee = 1000; // 1000 is 10%
     uint256 public ether001 = 10**16;
+    // uint256 public ether001 = 10**16;
 
     bool public paused = false;
     bool public presaleM = false;
@@ -52,8 +59,8 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         // _name = "HMI";
         // _symbol = "HMI";
         // ether001
-        setPublicSalePrice(ether001); // => 0.01 ether = 10finney
-        setPresalePrice(ether001.mul(7).div(10)); // => 0.007 ether
+        setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
+        setPresalePrice(ether001.div(10)); // => 0.007 ether
         maxSupply = 3333;
         setMaxMintAmountPerTx(5);
     }
@@ -89,18 +96,18 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     }
 
     // bytes32 _merkleRoot
-
     modifier isValidMerkleProof(
         bytes32[] calldata _merkleProof,
-        bytes32 _merkleRoot
+        bytes32 _merkleRoot,
+        address _to
     ) {
         require(
             MerkleProof.verify(
                 _merkleProof,
                 _merkleRoot,
-                keccak256(abi.encodePacked(msg.sender))
+                keccak256(abi.encodePacked(_to))
             ) == true,
-            "Not allowed origin"
+            "HMI:invalid merkle proof"
         );
         _;
     }
@@ -136,7 +143,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         public
         view
         virtual
-        override
+        override(IERC721A, ERC721A)
         returns (string memory)
     {
         require(
@@ -151,7 +158,6 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         if (_tokenId <= maxSupply) {
             return getTokenURI(_tokenId, baseURI);
         }
-        // }
         return " ";
     }
 
@@ -164,16 +170,24 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         presaleM = !presaleM;
     }
 
+    function toggleOgSaleM() public onlyOwner {
+        ogSaleM = !ogSaleM;
+    }
+
     function togglePublicSale() public onlyOwner {
         publicM = !publicM;
+    }
+
+    function toggleReveal() public onlyOwner {
+        revealed = !revealed;
     }
 
     function publicSaleMint(uint256 _mintAmount, address _to)
         public
         payable
+        onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(publicSalePrice, _mintAmount)
-        onlyAccounts
     {
         require(!paused, "HMI: Contract is paused");
         require(publicM, "HMI: The public sale is not enabled!");
@@ -183,43 +197,48 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
 
     function presaleMint(
         uint256 _mintAmount,
-        bytes32[] calldata _merkleProof,
-        address _to
+        address _to,
+        bytes32[] calldata _merkleProof
     )
         public
         payable
+        onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(presalePrice, _mintAmount)
-        isValidMerkleProof(_merkleProof, wlMerkleRoot)
-        onlyAccounts
+        isValidMerkleProof(_merkleProof, wlMerkleRoot, _to)
     {
         require(!paused, "HMI: Contract is paused");
         require(presaleM, "HMI: Presale is OFF");
         require(
             _presaleClaimed[_to] + _mintAmount <= presaleAmountLimit,
-            "HMI: You can't mint so much tokens"
+            "HMI: You can't mint so much tokens(wl)"
         );
 
         _presaleClaimed[_to] += _mintAmount;
         _safeMint(_to, _mintAmount);
     }
 
-    function ogSaleMint(uint256 _mintAmount, bytes32[] calldata _merkleProof)
+    function ogSaleMint(
+        uint256 _mintAmount,
+        bytes32[] calldata _merkleProof,
+        address _to
+    )
         public
         payable
+        onlyAccounts
         mintCompliance(_mintAmount)
-        isValidMerkleProof(_merkleProof, ogMerkleRoot)
+        isValidMerkleProof(_merkleProof, ogMerkleRoot, _to)
         onlyAccounts
     {
         require(!paused, "HMI: Contract is paused");
         require(ogSaleM, "HMI: og sale is OFF");
         require(
-            _ogSaleClaimed[msg.sender] + _mintAmount <= ogSaleAmountLimit,
-            "HMI: You can't mint so much tokens"
+            _ogSaleClaimed[_to] + _mintAmount <= ogSaleAmountLimit,
+            "HMI: You can't mint so much tokens(og)"
         );
 
-        _ogSaleClaimed[msg.sender] += _mintAmount;
-        _safeMint(msg.sender, _mintAmount);
+        _ogSaleClaimed[_to] += _mintAmount;
+        _safeMint(_to, _mintAmount);
     }
 
     // 특정 숫자가 되면 예를들어서
@@ -276,12 +295,41 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
             );
     }
 
+    function getTimeGap(uint256 tokenId) public view returns (uint256) {
+        return block.timestamp - _stakingBegin[tokenId];
+    }
+
+    function getTokenStakingBegin(uint256 tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        return _stakingBegin[tokenId];
+    }
+
+    // holding 하고있는 기간 등록하기
+    function _beforeTokenTransfers(
+        address from,
+        address to,
+        uint256 startTokenId,
+        uint256 quantity
+    ) internal virtual override {
+        for (
+            uint256 tokenId = startTokenId;
+            tokenId < startTokenId + quantity;
+            tokenId++
+        ) {
+            _stakingBegin[tokenId] = block.timestamp;
+        }
+    }
+
     function _afterTokenTransfers(
         address from,
         address to,
         uint256 startTokenId,
         uint256 quantity
     ) internal virtual override {
+        to;
         if (from == address(0)) {
             // bulk mint
             for (
@@ -298,7 +346,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         public
         view
         virtual
-        override(ERC721A, IERC165)
+        override(ERC721A, IERC165, IERC721A)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
