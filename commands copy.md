@@ -1,6 +1,5 @@
 remixd -s . --remix-ide https://ide.klaytn.com
 
-
 ###클레이튼 커맨드 이걸로 바뀜
 remixd -s . -u https://ide.klaytn.foundation
 
@@ -36,3 +35,5 @@ uint256 \_additionalReward = (msg.value _ additionalRewardPercent) /
 
 net stop winnat
 net start winnat
+
+npx hardhat run scripts/deploy.ts --network rinkeby
