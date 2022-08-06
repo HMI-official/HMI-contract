@@ -17,7 +17,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    mapping(uint256 => uint256) public _stakingBegin;
+    // mapping(uint256 => uint256) public _stakingBegin;
 
     mapping(address => uint256) public _presaleClaimed;
     mapping(address => uint256) public _ogSaleClaimed;
