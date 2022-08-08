@@ -54,9 +54,11 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
 
     bool public secondaryMarketActivated = true;
 
-    uint256 secondaryMarketActivatedTime;
+    uint256 public secondaryMarketActivatedTime;
 
     uint256 public mintingBeginTime;
+
+    // uint256 internal constant WEEK = 1 weeks;
 
     constructor() ERC721A("HI PLANET", "HMI") {
         // constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
@@ -146,22 +148,6 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     function setMaxSupply(uint256 _maxSupply) public onlyOwner {
         maxSupply = _maxSupply;
     }
-
-    // function setPublicSalePrice(uint256 _cost) public onlyOwner {
-    //     publicSalePrice = _cost;
-    // }
-
-    // function setPresalePrice(uint256 _cost) public onlyOwner {
-    //     presalePrice = _cost;
-    // }
-
-    // function setOgSaleAmountLimit(uint256 _limit) public onlyOwner {
-    //     ogSaleAmountLimit = _limit;
-    // }
-
-    // function setPresaleAmountLimit(uint256 _limit) public onlyOwner {
-    //     presaleAmountLimit = _limit;
-    // }
 
     function tokenURI(uint256 _tokenId)
         public
@@ -284,7 +270,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     // 특정 숫자가 되면 예를들어서
 
     function airdrop(address _to, uint256 _amount) public onlyOwner {
-        require(totalSupply() + _amount <= maxSupply, "Max supply exceeded!");
+        require(
+            totalSupply() + _amount <= maxSupply,
+            "HMI: Max supply exceeded!"
+        );
         _safeMint(_to, _amount);
     }
 
@@ -326,7 +315,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         (bool success, ) = payable(owner()).call{value: address(this).balance}(
             ""
         );
-        require(success, "Transfer failed.");
+        require(success, "HMI: Transfer failed.");
     }
 
     function getTokenURI(uint256 _tokenId, string memory _tokenURI)

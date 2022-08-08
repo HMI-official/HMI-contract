@@ -17,3 +17,8 @@ export const diffDay = (mintingDate) => {
 
   return { day: diffDay, hour: diffHour, min: diffMin, sec: diffSec };
 };
+
+export const getUnixTime = (date) => {
+  const unixTime = (date.getTime() / 1000).toFixed(0);
+  return Number(unixTime);
+};
