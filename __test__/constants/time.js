@@ -1,6 +1,6 @@
 const SECOND = 60;
-const MINUTE = 60 * SECOND;
-const HOUR = 1 * MINUTE;
+const MINUTE = 1 * SECOND;
+const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const WEEK = 7 * DAY;
 

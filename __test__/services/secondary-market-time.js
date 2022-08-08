@@ -4,10 +4,11 @@ import { writeJson, getUnixTime, makeDir } from "../utils/index.js";
 
 const main = () => {
   // const MINTING_DATE = "8/25/2022 2:00:00 PM PST";
-  const date = new Date(MINTING_DATE);
+  const date = new Date();
+  // const date = new Date(MINTING_DATE);
   // to unix time
   const mintingDateUnix = getUnixTime(date);
-  const mintingDateUnixAddWeek = mintingDateUnix + 2 * UNIX_TIME.WEEK;
+  const mintingDateUnixAddWeek = mintingDateUnix + 1 * UNIX_TIME.MINUTE;
 
   const obj = {
     release: mintingDateUnixAddWeek,

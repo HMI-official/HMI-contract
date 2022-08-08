@@ -352,6 +352,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         return mintingBeginTime - block.timestamp;
     }
 
+    function getSecMarkDiff() public view returns (uint256) {
+        return secondaryMarketActivatedTime - block.timestamp;
+    }
+
     function _beforeTokenTransfers(
         address from,
         address to,

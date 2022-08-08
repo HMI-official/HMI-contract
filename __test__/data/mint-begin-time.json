@@ -1,7 +1,7 @@
 {
-  "now": 1659970502,
+  "now": 1659971053,
   "mintBegin": { "unix": 1661464800, "mintData": "8/25/2022 2:00:00 PM PST" },
-  "remainingTime": { "day": 17, "hour": 7, "min": 4, "sec": 57 },
-  "timeGap": 1494298,
+  "remainingTime": { "day": 17, "hour": 6, "min": 55, "sec": 46 },
+  "timeGap": 1493747,
   "copyToContract": 1661464800
 }
