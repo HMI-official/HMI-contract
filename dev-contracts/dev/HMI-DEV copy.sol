@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "erc721a/contracts/ERC721A.sol";
+// import "erc721a/contracts/ERC721A.sol";
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -9,15 +9,15 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./ERC2981.sol";
+// import "./ERC2981.sol";
 
 // 최종적으로 이거 사용하기
 // TODO: 그리고 정확하게 minting time 정해놓기
-contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
+contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    mapping(uint256 => uint256) public _stakingBegin;
+    // mapping(uint256 => uint256) public _stakingBegin;
 
     mapping(address => uint256) public _presaleClaimed;
     mapping(address => uint256) public _ogSaleClaimed;
@@ -59,8 +59,11 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         // _name = "HMI";
         // _symbol = "HMI";
         // ether001
-        setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
-        setPresalePrice(ether001.div(10)); // => 0.007 ether
+        publicSalePrice = ether001.div(10);
+        presalePrice = ether001.div(10);
+
+        // setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
+        // setPresalePrice(ether001.div(10)); // => 0.007 ether
         maxSupply = 3333;
         setMaxMintAmountPerTx(5);
     }
@@ -128,21 +131,21 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         maxSupply = _maxSupply;
     }
 
-    function setPublicSalePrice(uint256 _cost) public onlyOwner {
-        publicSalePrice = _cost;
-    }
+    // function setPublicSalePrice(uint256 _cost) public onlyOwner {
+    //     publicSalePrice = _cost;
+    // }
 
-    function setPresalePrice(uint256 _cost) public onlyOwner {
-        presalePrice = _cost;
-    }
+    // function setPresalePrice(uint256 _cost) public onlyOwner {
+    //     presalePrice = _cost;
+    // }
 
-    function setOgSaleAmountLimit(uint256 _limit) public onlyOwner {
-        ogSaleAmountLimit = _limit;
-    }
+    // function setOgSaleAmountLimit(uint256 _limit) public onlyOwner {
+    //     ogSaleAmountLimit = _limit;
+    // }
 
-    function setPresaleAmountLimit(uint256 _limit) public onlyOwner {
-        presaleAmountLimit = _limit;
-    }
+    // function setPresaleAmountLimit(uint256 _limit) public onlyOwner {
+    //     presaleAmountLimit = _limit;
+    // }
 
     function tokenURI(uint256 _tokenId)
         public
@@ -175,7 +178,7 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         presaleM = !presaleM;
     }
 
-    function toggleOgSaleM() public onlyOwner {
+    function toggleOgsale() public onlyOwner {
         ogSaleM = !ogSaleM;
     }
 
@@ -187,7 +190,11 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         revealed = !revealed;
     }
 
-    function publicSaleMint(uint256 _mintAmount, address _to)
+    function publicSaleMint(
+        uint256 _mintAmount,
+        address crossmintTo,
+        address receiver
+    )
         public
         payable
         onlyAccounts
@@ -196,13 +203,15 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     {
         require(!paused, "HMI: Contract is paused");
         require(publicM, "HMI: The public sale is not enabled!");
-        _safeMint(_to, _mintAmount);
-        // _safeMint(msg.sender, _mintAmount);
+
+        crossmintTo;
+        _safeMint(receiver, _mintAmount);
     }
 
     function presaleMint(
         uint256 _mintAmount,
-        address _to,
+        address crossmintTo,
+        address receiver,
         bytes32[] calldata _merkleProof
     )
         public
@@ -210,17 +219,17 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
         onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(presalePrice, _mintAmount)
-        isValidMerkleProof(_merkleProof, wlMerkleRoot, _to)
+        isValidMerkleProof(_merkleProof, wlMerkleRoot, receiver)
     {
         require(!paused, "HMI: Contract is paused");
         require(presaleM, "HMI: Presale is OFF");
         require(
-            _presaleClaimed[_to] + _mintAmount < presaleAmountLimit + 1,
+            _presaleClaimed[receiver] + _mintAmount < presaleAmountLimit + 1,
             "HMI: You can't mint so much tokens(wl)"
         );
-
-        _presaleClaimed[_to] += _mintAmount;
-        _safeMint(_to, _mintAmount);
+        crossmintTo;
+        _presaleClaimed[receiver] += _mintAmount;
+        _safeMint(receiver, _mintAmount);
     }
 
     function ogSaleMint(
@@ -250,10 +259,6 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     function airdrop(address _to, uint256 _amount) public onlyOwner {
         require(totalSupply() + _amount <= maxSupply, "Max supply exceeded!");
         _safeMint(_to, _amount);
-    }
-
-    function setRoyaltyFee(uint256 _fee) public onlyOwner {
-        royaltyFee = _fee;
     }
 
     function setWlMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
@@ -315,36 +320,5 @@ contract HMI is ERC721A, ERC721AQueryable, Ownable, ReentrancyGuard, ERC2981 {
     {
         TokenOwnership memory ownership = explicitOwnershipOf(tokenId);
         return ownership.startTimestamp;
-    }
-
-    // holding 하고있는 기간 등록하기
-
-    function _afterTokenTransfers(
-        address from,
-        address to,
-        uint256 startTokenId,
-        uint256 quantity
-    ) internal virtual override {
-        to;
-        if (from == address(0)) {
-            // bulk mint
-            for (
-                uint256 tokenId = startTokenId;
-                tokenId < startTokenId + quantity;
-                tokenId++
-            ) {
-                _setRoyalty(tokenId, owner(), royaltyFee);
-            }
-        }
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC721A, IERC165, IERC721A)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
     }
 }

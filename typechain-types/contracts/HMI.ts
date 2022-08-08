@@ -46,7 +46,6 @@ export interface HMIInterface extends utils.Interface {
   functions: {
     "_ogSaleClaimed(address)": FunctionFragment;
     "_presaleClaimed(address)": FunctionFragment;
-    "_stakingBegin(uint256)": FunctionFragment;
     "airdrop(address,uint256)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
@@ -74,10 +73,10 @@ export interface HMIInterface extends utils.Interface {
     "paused()": FunctionFragment;
     "presaleAmountLimit()": FunctionFragment;
     "presaleM()": FunctionFragment;
-    "presaleMint(uint256,address,bytes32[])": FunctionFragment;
+    "presaleMint(uint256,address,address,bytes32[])": FunctionFragment;
     "presalePrice()": FunctionFragment;
     "publicM()": FunctionFragment;
-    "publicSaleMint(uint256,address)": FunctionFragment;
+    "publicSaleMint(uint256,address,address)": FunctionFragment;
     "publicSalePrice()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "revealed()": FunctionFragment;
@@ -112,7 +111,6 @@ export interface HMIInterface extends utils.Interface {
     nameOrSignatureOrTopic:
       | "_ogSaleClaimed"
       | "_presaleClaimed"
-      | "_stakingBegin"
       | "airdrop"
       | "approve"
       | "balanceOf"
@@ -181,10 +179,6 @@ export interface HMIInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "_presaleClaimed",
     values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "_stakingBegin",
-    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "airdrop",
@@ -276,6 +270,7 @@ export interface HMIInterface extends utils.Interface {
     values: [
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<string>,
+      PromiseOrValue<string>,
       PromiseOrValue<BytesLike>[]
     ]
   ): string;
@@ -286,7 +281,11 @@ export interface HMIInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "publicM", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "publicSaleMint",
-    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<string>]
+    values: [
+      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<string>,
+      PromiseOrValue<string>
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "publicSalePrice",
@@ -415,10 +414,6 @@ export interface HMIInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "_presaleClaimed",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "_stakingBegin",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "airdrop", data: BytesLike): Result;
@@ -690,11 +685,6 @@ export interface HMI extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
-    _stakingBegin(
-      arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     airdrop(
       _to: PromiseOrValue<string>,
       _amount: PromiseOrValue<BigNumberish>,
@@ -793,7 +783,8 @@ export interface HMI extends BaseContract {
 
     presaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       _merkleProof: PromiseOrValue<BytesLike>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -804,7 +795,8 @@ export interface HMI extends BaseContract {
 
     publicSaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -944,11 +936,6 @@ export interface HMI extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  _stakingBegin(
-    arg0: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   airdrop(
     _to: PromiseOrValue<string>,
     _amount: PromiseOrValue<BigNumberish>,
@@ -1047,7 +1034,8 @@ export interface HMI extends BaseContract {
 
   presaleMint(
     _mintAmount: PromiseOrValue<BigNumberish>,
-    _to: PromiseOrValue<string>,
+    crossmintTo: PromiseOrValue<string>,
+    receiver: PromiseOrValue<string>,
     _merkleProof: PromiseOrValue<BytesLike>[],
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -1058,7 +1046,8 @@ export interface HMI extends BaseContract {
 
   publicSaleMint(
     _mintAmount: PromiseOrValue<BigNumberish>,
-    _to: PromiseOrValue<string>,
+    crossmintTo: PromiseOrValue<string>,
+    receiver: PromiseOrValue<string>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -1198,11 +1187,6 @@ export interface HMI extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    _stakingBegin(
-      arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     airdrop(
       _to: PromiseOrValue<string>,
       _amount: PromiseOrValue<BigNumberish>,
@@ -1301,7 +1285,8 @@ export interface HMI extends BaseContract {
 
     presaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       _merkleProof: PromiseOrValue<BytesLike>[],
       overrides?: CallOverrides
     ): Promise<void>;
@@ -1312,7 +1297,8 @@ export interface HMI extends BaseContract {
 
     publicSaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1483,11 +1469,6 @@ export interface HMI extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    _stakingBegin(
-      arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     airdrop(
       _to: PromiseOrValue<string>,
       _amount: PromiseOrValue<BigNumberish>,
@@ -1586,7 +1567,8 @@ export interface HMI extends BaseContract {
 
     presaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       _merkleProof: PromiseOrValue<BytesLike>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -1597,7 +1579,8 @@ export interface HMI extends BaseContract {
 
     publicSaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1738,11 +1721,6 @@ export interface HMI extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    _stakingBegin(
-      arg0: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     airdrop(
       _to: PromiseOrValue<string>,
       _amount: PromiseOrValue<BigNumberish>,
@@ -1845,7 +1823,8 @@ export interface HMI extends BaseContract {
 
     presaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       _merkleProof: PromiseOrValue<BytesLike>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
@@ -1856,7 +1835,8 @@ export interface HMI extends BaseContract {
 
     publicSaleMint(
       _mintAmount: PromiseOrValue<BigNumberish>,
-      _to: PromiseOrValue<string>,
+      crossmintTo: PromiseOrValue<string>,
+      receiver: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

@@ -19,6 +19,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+const { ETHERSCAN_API_KEY, RINKEBY_URL, PRIVATE_KEY } = process.env;
+if (!ETHERSCAN_API_KEY || !RINKEBY_URL || !PRIVATE_KEY)
+  throw new Error("Missing environment variables");
+// console.log(ETHERSCAN_API_KEY, RINKEBY_URL, PRIVATE_KEY);
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -31,9 +36,8 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     rinkeby: {
-      url: process.env.RINKEBY_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: RINKEBY_URL || "",
+      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
     },
   },
   gasReporter: {
@@ -41,7 +45,7 @@ const config: HardhatUserConfig = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: ETHERSCAN_API_KEY,
   },
 };
 

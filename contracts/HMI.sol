@@ -39,10 +39,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     uint256 public presalePrice;
     uint256 public publicSalePrice;
 
-    uint256 public presaleAmountLimit = 5;
+    uint256 public presaleAmountLimit = 10;
     uint256 public ogSaleAmountLimit = 1;
 
-    uint256 public maxMintAmountPerTx = 5;
+    uint256 public maxMintAmountPerTx = 10;
     uint256 public royaltyFee = 1000; // 1000 is 10%
     uint256 public ether001 = 10**16;
     // uint256 public ether001 = 10**16;
@@ -120,6 +120,21 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         _;
     }
 
+    // this function used when public minting is on
+    function publicSaleBulkMintDiscount(uint256 _mintAmount, uint256 _price)
+        internal
+        pure
+        returns (uint256)
+    {
+        // if user minted 10 tokens, discount is 20%
+        if (_mintAmount == 10) return _price.mul(8).div(10);
+
+        // if user minted more than 5 tokens, discount is 10%
+        if (_mintAmount > 4) return _price.mul(9).div(10);
+
+        return _price;
+    }
+
     function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
         public
         onlyOwner
@@ -178,7 +193,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         presaleM = !presaleM;
     }
 
-    function toggleOgSaleM() public onlyOwner {
+    function toggleOgsale() public onlyOwner {
         ogSaleM = !ogSaleM;
     }
 
@@ -190,21 +205,31 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         revealed = !revealed;
     }
 
-    function publicSaleMint(uint256 _mintAmount, address _to)
+    function publicSaleMint(
+        uint256 _mintAmount,
+        address crossmintTo,
+        address receiver
+    )
         public
         payable
         onlyAccounts
         mintCompliance(_mintAmount)
-        mintPriceCompliance(publicSalePrice, _mintAmount)
+        mintPriceCompliance(
+            publicSaleBulkMintDiscount(_mintAmount, publicSalePrice),
+            _mintAmount
+        )
     {
         require(!paused, "HMI: Contract is paused");
         require(publicM, "HMI: The public sale is not enabled!");
-        _safeMint(_to, _mintAmount);
+
+        crossmintTo;
+        _safeMint(receiver, _mintAmount);
     }
 
     function presaleMint(
         uint256 _mintAmount,
-        address _to,
+        address crossmintTo,
+        address receiver,
         bytes32[] calldata _merkleProof
     )
         public
@@ -212,17 +237,17 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(presalePrice, _mintAmount)
-        isValidMerkleProof(_merkleProof, wlMerkleRoot, _to)
+        isValidMerkleProof(_merkleProof, wlMerkleRoot, receiver)
     {
         require(!paused, "HMI: Contract is paused");
         require(presaleM, "HMI: Presale is OFF");
         require(
-            _presaleClaimed[_to] + _mintAmount < presaleAmountLimit + 1,
+            _presaleClaimed[receiver] + _mintAmount < presaleAmountLimit + 1,
             "HMI: You can't mint so much tokens(wl)"
         );
-
-        _presaleClaimed[_to] += _mintAmount;
-        _safeMint(_to, _mintAmount);
+        crossmintTo;
+        _presaleClaimed[receiver] += _mintAmount;
+        _safeMint(receiver, _mintAmount);
     }
 
     function ogSaleMint(

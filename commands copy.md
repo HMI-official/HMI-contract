@@ -37,3 +37,6 @@ net stop winnat
 net start winnat
 
 npx hardhat run scripts/deploy.ts --network rinkeby
+
+1. 여기서 네트워크 반드시 지정해줘야돼
+2. npx hardhat run이야 run까지 무조껀 해줘야돼

@@ -17,18 +17,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Ownable__factory>;
     getContractFactory(
-      name: "IERC2981",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC2981__factory>;
-    getContractFactory(
-      name: "IERC165",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IERC165__factory>;
-    getContractFactory(
-      name: "ERC2981",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC2981__factory>;
-    getContractFactory(
       name: "HMI",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.HMI__factory>;
@@ -58,21 +46,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Ownable>;
-    getContractAt(
-      name: "IERC2981",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC2981>;
-    getContractAt(
-      name: "IERC165",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IERC165>;
-    getContractAt(
-      name: "ERC2981",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC2981>;
     getContractAt(
       name: "HMI",
       address: string,
