@@ -359,6 +359,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         return ownership.startTimestamp;
     }
 
+    function getMintingBeginDiff() public view returns (uint256) {
+        return mintingBeginTime - block.timestamp;
+    }
+
     function _beforeTokenTransfers(
         address from,
         address to,
@@ -380,9 +384,5 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         to;
         startTokenId;
         quantity;
-    }
-
-    function getAddress() public view returns (address) {
-        return address(this);
     }
 }
