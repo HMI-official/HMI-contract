@@ -52,6 +52,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     bool public publicM = false;
     bool public ogSaleM = false;
 
+    bool public secondaryMarketActivated = true;
+
+    uint256 secondaryMarketActivatedTime;
+
     uint256 public mintingBeginTime;
 
     constructor() ERC721A("HI PLANET", "HMI") {
@@ -65,7 +69,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         // setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
         // setPresalePrice(ether001.div(10)); // => 0.007 ether
         maxSupply = 3333;
-        setMaxMintAmountPerTx(5);
+        // setMaxMintAmountPerTx(10);
     }
 
     // 필수
@@ -115,14 +119,11 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier mintingBeginCompliance(uint256 _mintingBegin) {
-        require(_mintingBegin < block.timestamp, "HMI: Minting comming soon!");
-        _;
-    }
-
     // this function used when public minting is on
+    // TODO:
+    // 이거 지금은 테스트중이라 public인데 pure이랑 internal로 바꾸기
     function publicSaleBulkMintDiscount(uint256 _mintAmount, uint256 _price)
-        internal
+        public
         pure
         returns (uint256)
     {
@@ -205,6 +206,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         revealed = !revealed;
     }
 
+    function toggleSecondaryMarketActivated() public onlyOwner {
+        secondaryMarketActivated = !secondaryMarketActivated;
+    }
+
     function publicSaleMint(
         uint256 _mintAmount,
         address crossmintTo,
@@ -221,6 +226,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     {
         require(!paused, "HMI: Contract is paused");
         require(publicM, "HMI: The public sale is not enabled!");
+        require(
+            mintingBeginTime < block.timestamp,
+            "HMI: Minting comming soon!"
+        );
 
         crossmintTo;
         _safeMint(receiver, _mintAmount);
@@ -299,6 +308,16 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         mintingBeginTime = _mintingBeginTime;
     }
 
+    function setSecondaryMarketActivatedTime(
+        uint256 _secondaryMarketActivatedTime
+    ) public onlyOwner {
+        secondaryMarketActivatedTime = _secondaryMarketActivatedTime;
+    }
+
+    function getCurBlock() public view returns (uint256) {
+        return block.timestamp;
+    }
+
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
@@ -338,5 +357,32 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     {
         TokenOwnership memory ownership = explicitOwnershipOf(tokenId);
         return ownership.startTimestamp;
+    }
+
+    function _beforeTokenTransfers(
+        address from,
+        address to,
+        uint256 startTokenId,
+        uint256 quantity
+    ) internal virtual override {
+        if (from != address(0)) {
+            require(
+                secondaryMarketActivatedTime < block.timestamp ||
+                    secondaryMarketActivatedTime == 0,
+                "HMI: Secondary market is not activated(time not yet come)"
+            );
+            require(
+                secondaryMarketActivated,
+                "HMI: Secondary market is not activated(contract owner blocked)"
+            );
+        }
+        // from;
+        to;
+        startTokenId;
+        quantity;
+    }
+
+    function getAddress() public view returns (address) {
+        return address(this);
     }
 }
