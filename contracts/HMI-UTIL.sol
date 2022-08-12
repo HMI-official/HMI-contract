@@ -222,7 +222,7 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
         return ogsalePolicy;
     }
 
-    function getMarkerConfig() public view returns (MarketConfig memory) {
+    function getMarketConfig() public view returns (MarketConfig memory) {
         return marketConfig;
     }
 }

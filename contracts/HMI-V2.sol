@@ -291,7 +291,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
                 "HMI: Secondary market is not activated(contract owner blocked)"
             );
         }
-        // from;
+        // from;W
         to;
         startTokenId;
         quantity;
