@@ -17,31 +17,18 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    struct MintTimePolicy {
+    struct MintTimeInfo {
         uint256 startTime;
         uint256 endTime;
         string name;
         uint16 index;
     }
 
-    struct PauseInfo {
-        bool paused;
-        bool presaleM;
-        bool publicM;
-        bool ogSaleM;
-    }
-
-    struct PriceInfo {
-        uint256 presale;
-        uint256 publicM;
-        uint256 ogSale;
-    }
-
     // mapping(uint256 => uint256) public _stakingBegin;
 
     mapping(address => uint256) public _presaleClaimed;
     mapping(address => uint256) public _ogSaleClaimed;
-    mapping(string => MintTimePolicy) public _mintTimePolicy;
+    mapping(string => MintTimeInfo) public _mintTimeInfo;
 
     // mapping(uint256 => PhaseInfo) public _phaseInfo;
     bool public revealed = false;
@@ -68,11 +55,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     uint256 public ether001 = 10**16;
     // uint256 public ether001 = 10**16;
 
-    PauseInfo public pausedInfo;
-    // bool public paused = false;
-    // bool public presaleM = false;
-    // bool public publicM = false;
-    // bool public ogSaleM = false;
+    bool public paused = false;
+    bool public presaleM = false;
+    bool public publicM = false;
+    bool public ogSaleM = false;
 
     bool public secondaryMarketActivated = true;
 
@@ -205,19 +191,19 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
 
     // 이거는 필수
     function togglePause() public onlyOwner {
-        pausedInfo.paused = !pausedInfo.paused;
+        paused = !paused;
     }
 
     function togglePresale() public onlyOwner {
-        pausedInfo.presaleM = !pausedInfo.presaleM;
+        presaleM = !presaleM;
     }
 
     function toggleOgsale() public onlyOwner {
-        pausedInfo.ogSaleM = !pausedInfo.ogSaleM;
+        ogSaleM = !ogSaleM;
     }
 
     function togglePublicSale() public onlyOwner {
-        pausedInfo.publicM = !pausedInfo.publicM;
+        publicM = !publicM;
     }
 
     function toggleReveal() public onlyOwner {
@@ -242,10 +228,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
             _mintAmount
         )
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.publicM, "HMI: The public sale is not enabled!");
+        require(!paused, "HMI: Contract is paused");
+        require(publicM, "HMI: The public sale is not enabled!");
         require(
-            _mintTimePolicy["public"].startTime < block.timestamp,
+            _mintTimeInfo["public"].startTime < block.timestamp,
             "HMI: Minting comming soon!"
         );
 
@@ -266,14 +252,14 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         mintPriceCompliance(presalePrice, _mintAmount)
         isValidMerkleProof(_merkleProof, wlMerkleRoot, receiver)
         mintTimeCompliance(
-            _mintTimePolicy["wl"].startTime,
-            _mintTimePolicy["wl"].endTime
+            _mintTimeInfo["wl"].startTime,
+            _mintTimeInfo["wl"].endTime
         )
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.presaleM, "HMI: Presale is OFF");
+        require(!paused, "HMI: Contract is paused");
+        require(presaleM, "HMI: Presale is OFF");
         // require(
-        //     _mintTimePolicy["wl"].startTime < block.timestamp,
+        //     _mintTimeInfo["wl"].startTime < block.timestamp,
         //     "HMI: Minting comming soon!(wl)"
         // );
         require(
@@ -297,12 +283,12 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         mintCompliance(_mintAmount)
         isValidMerkleProof(_merkleProof, ogMerkleRoot, _to)
         mintTimeCompliance(
-            _mintTimePolicy["og"].startTime,
-            _mintTimePolicy["og"].endTime
+            _mintTimeInfo["og"].startTime,
+            _mintTimeInfo["og"].endTime
         )
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.ogSaleM, "HMI: og sale is OFF");
+        require(!paused, "HMI: Contract is paused");
+        require(ogSaleM, "HMI: og sale is OFF");
         // require(
         //     ogMintingBeginTime < block.timestamp,
         //     "HMI: Minting comming soon!(og)"
@@ -353,10 +339,10 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         uint16 _index
     ) public onlyOwner {
         unchecked {
-            _mintTimePolicy[_name].startTime = _mintStart;
-            _mintTimePolicy[_name].endTime = _mintEnd;
-            _mintTimePolicy[_name].name = _name;
-            _mintTimePolicy[_name].index = _index;
+            _mintTimeInfo[_name].startTime = _mintStart;
+            _mintTimeInfo[_name].endTime = _mintEnd;
+            _mintTimeInfo[_name].name = _name;
+            _mintTimeInfo[_name].index = _index;
         }
     }
 
@@ -431,8 +417,8 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     //     returns (uint256)
     // {
     //     uint256 _mintTime;
-    //     if (_time == 0) _mintTime = _mintTimePolicy[_name].startTime;
-    //     else _mintTime = _mintTimePolicy[_name].endTime;
+    //     if (_time == 0) _mintTime = _mintTimeInfo[_name].startTime;
+    //     else _mintTime = _mintTimeInfo[_name].endTime;
     //     uint256 _gap = _mintTime - block.timestamp;
     //     if (_gap <= 0) return 0;
     //     return _gap;
