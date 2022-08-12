@@ -10,6 +10,8 @@ import "./interfaces/IHI-PLANET-UTIL.sol";
 contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
+    // wl price =>
+    // public price =>
 
     uint256 internal ether001 = 10**16;
     uint8 constant PUBLIC_INDEX = 0;
@@ -46,7 +48,7 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
         presalePolicy.name = "presaleM";
         presalePolicy.index = 1;
         presalePolicy.paused = true;
-        presalePolicy.maxMintAmountLimit = 10;
+        presalePolicy.maxMintAmountLimit = 5;
 
         ogsalePolicy.price = 0;
         ogsalePolicy.startTime = 0;
@@ -81,21 +83,13 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
         return _price;
     }
 
-    function setMaxMintAmountPerTx(uint8 _maxMintAmountPerTx) public onlyOwner {
-        config.maxMintAmountPerTx = _maxMintAmountPerTx;
-    }
-
-    function setMaxSupply(uint16 _maxSupply) public onlyOwner {
-        config.maxSupply = _maxSupply;
-    }
-
     // 이거는 필수
     function togglePause() public onlyOwner {
         config.paused = !config.paused;
     }
 
     function togglePresale() public onlyOwner {
-        config.paused = !config.paused;
+        presalePolicy.paused = !presalePolicy.paused;
     }
 
     function toggleOgsale() public onlyOwner {
@@ -112,6 +106,57 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
 
     function toggleMarketActicated() public onlyOwner {
         marketConfig.activated = !marketConfig.activated;
+    }
+
+    function setPublicsalePolicy(
+        uint256 _price,
+        uint256 _startTime,
+        uint256 _endTime,
+        bool _paused
+    ) public onlyOwner returns (bool) {
+        publicPolicy.price = _price;
+        publicPolicy.startTime = _startTime;
+        publicPolicy.endTime = _endTime;
+        publicPolicy.paused = _paused;
+        return true;
+    }
+
+    function setPresalePolicy(
+        uint256 _price,
+        uint256 _startTime,
+        uint256 _endTime,
+        bool _paused,
+        uint8 _maxMintAmountLimit
+    ) public onlyOwner returns (bool) {
+        presalePolicy.price = _price;
+        presalePolicy.startTime = _startTime;
+        presalePolicy.endTime = _endTime;
+        presalePolicy.paused = _paused;
+        presalePolicy.maxMintAmountLimit = _maxMintAmountLimit;
+        return true;
+    }
+
+    function setOgsalePolicy(
+        uint256 _price,
+        uint256 _startTime,
+        uint256 _endTime,
+        bool _paused,
+        uint8 _maxMintAmountLimit
+    ) public onlyOwner returns (bool) {
+        ogsalePolicy.price = _price;
+        ogsalePolicy.startTime = _startTime;
+        ogsalePolicy.endTime = _endTime;
+        ogsalePolicy.paused = _paused;
+        ogsalePolicy.maxMintAmountLimit = _maxMintAmountLimit;
+        return true;
+    }
+
+    function setMaxMintAmountPerTx(uint8 _maxMintAmountPerTx) public onlyOwner {
+        config.maxMintAmountPerTx = _maxMintAmountPerTx;
+    }
+
+    function setMaxSupply(uint16 _maxSupply) public onlyOwner {
+        config.maxSupply = _maxSupply;
     }
 
     function setWlMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
@@ -165,28 +210,31 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
         view
         returns (uint256, uint256)
     {
-        uint256 startGap;
-        uint256 endGap;
+        require(_policyIndex < 3, "HMI: Invalid index");
+        uint256 startGap = 0;
+        uint256 endGap = 0;
+        bool success;
+        uint256 _now = block.timestamp;
 
         if (_policyIndex == PUBLIC_INDEX) {
-            startGap = publicPolicy.startTime - block.timestamp;
-            endGap = publicPolicy.endTime - block.timestamp;
+            (success, startGap) = (publicPolicy.startTime).trySub(_now);
+            (success, endGap) = (publicPolicy.endTime).trySub(_now);
         } else if (_policyIndex == PRESALE_INDEX) {
-            startGap = presalePolicy.startTime - block.timestamp;
-            endGap = presalePolicy.endTime - block.timestamp;
+            (success, startGap) = (presalePolicy.startTime).trySub(_now);
+            (success, endGap) = (presalePolicy.endTime).trySub(_now);
         } else if (_policyIndex == OG_INDEX) {
-            startGap = ogsalePolicy.startTime - block.timestamp;
-            endGap = ogsalePolicy.endTime - block.timestamp;
+            (success, startGap) = (ogsalePolicy.startTime).trySub(_now);
+            (success, endGap) = (ogsalePolicy.endTime).trySub(_now);
         }
-        if (startGap < 0) startGap = 0;
-        if (endGap < 0) endGap = 0;
 
         return (startGap, endGap);
     }
 
     function getSecMarketDiff() public view returns (uint256) {
-        uint256 _gap = marketConfig.activatedTime - block.timestamp;
-        if (_gap <= 0) return 0;
+        (bool _bool, uint256 _gap) = (marketConfig.activatedTime).trySub(
+            block.timestamp
+        );
+        _bool;
         return _gap;
     }
 
@@ -224,5 +272,9 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
 
     function getMarketConfig() public view returns (MarketConfig memory) {
         return marketConfig;
+    }
+
+    function getAddress() public view returns (address) {
+        return address(this);
     }
 }

@@ -127,23 +127,20 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             );
     }
 
-    function getMintTimeComplianc(uint256 _mintStart, uint256 _mintEnd)
-        public
-        view
-        returns (bool)
-    {
-        return block.timestamp > _mintStart && block.timestamp < _mintEnd;
-    }
-
     function presaleMint(
         uint256 _mintAmount,
         address crossmintTo,
         address receiver,
         bytes32[] calldata _merkleProof
-    ) public payable onlyAccounts mintCompliance(_mintAmount) {
+    )
+        public
+        payable
+        onlyAccounts
+        mintCompliance(_mintAmount)
+        mintPriceCompliance(proxy.getPresalePolicy().price, _mintAmount)
+    {
         Config memory config = proxy.getConfig();
         MintPolicy memory presalePolicy = proxy.getPresalePolicy();
-        // mintPriceCompliance(proxy.getPresalePolicy().price, _mintAmount);
         bool _isValidMerkleProof = getIsValidMerkleProof(
             _merkleProof,
             presalePolicy.merkleRoot,
@@ -151,7 +148,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         );
         require(_isValidMerkleProof, "HMI: invalid merkle proof(wl)");
 
-        bool isMintTimeCompliance = getMintTimeComplianc(
+        bool isMintTimeCompliance = getMintTimeCompliance(
             presalePolicy.startTime,
             presalePolicy.endTime
         );
@@ -188,7 +185,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         );
         require(_isValidMerkleProof, "HMI: invalid merkle proof(wl)");
 
-        bool isMintTimeCompliance = getMintTimeComplianc(
+        bool isMintTimeCompliance = getMintTimeCompliance(
             ogsalePolicy.startTime,
             ogsalePolicy.endTime
         );
@@ -243,6 +240,14 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         return block.timestamp - ownership.startTimestamp;
     }
 
+    function getMintTimeCompliance(uint256 _mintStart, uint256 _mintEnd)
+        public
+        view
+        returns (bool)
+    {
+        return block.timestamp > _mintStart && block.timestamp < _mintEnd;
+    }
+
     function getTokenStakingBegin(uint256 tokenId)
         public
         view
@@ -250,6 +255,10 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     {
         TokenOwnership memory ownership = explicitOwnershipOf(tokenId);
         return ownership.startTimestamp;
+    }
+
+    function getProxy() public view onlyOwner returns (address) {
+        return proxy.getAddress();
     }
 
     function _beforeTokenTransfers(
@@ -270,7 +279,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
                 "HMI: Secondary market is not activated(contract owner blocked)"
             );
         }
-        // from;W
+        // from;
         to;
         startTokenId;
         quantity;

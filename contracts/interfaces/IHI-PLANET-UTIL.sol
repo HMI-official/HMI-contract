@@ -94,4 +94,6 @@ interface IHI_PLANET_UTIL is IHIPLANET {
     function getOgsalePolicy() external view returns (MintPolicy memory);
 
     function getMarketConfig() external view returns (MarketConfig memory);
+
+    function getAddress() external view returns (address);
 }
