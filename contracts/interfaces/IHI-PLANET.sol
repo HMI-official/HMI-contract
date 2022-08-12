@@ -13,9 +13,9 @@ interface IHIPLANET {
         uint8 index;
         bool paused;
         bytes32 merkleRoot;
-        mapping(address => uint256) claimed;
         uint8 maxMintAmountLimit;
     }
+    // mapping(address => uint256) claimed;
 
     struct Config {
         bool revealed;

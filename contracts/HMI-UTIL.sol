@@ -5,9 +5,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "./interfaces/IHI-PLANET.sol";
+import "./interfaces/IHI-PLANET-UTIL.sol";
 
-contract HiPlanetUtil is IHIPLANET, ReentrancyGuard {
+contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
 
@@ -184,7 +184,7 @@ contract HiPlanetUtil is IHIPLANET, ReentrancyGuard {
         return (startGap, endGap);
     }
 
-    function getSecMarkDiff() public view returns (uint256) {
+    function getSecMarketDiff() public view returns (uint256) {
         uint256 _gap = marketConfig.activatedTime - block.timestamp;
         if (_gap <= 0) return 0;
         return _gap;
@@ -204,5 +204,25 @@ contract HiPlanetUtil is IHIPLANET, ReentrancyGuard {
                     config.baseExtension
                 )
             );
+    }
+
+    function getConfig() public view returns (Config memory) {
+        return config;
+    }
+
+    function getPublicPolicy() public view returns (MintPolicy memory) {
+        return publicPolicy;
+    }
+
+    function getPresalePolicy() public view returns (MintPolicy memory) {
+        return presalePolicy;
+    }
+
+    function getOgsalePolicy() public view returns (MintPolicy memory) {
+        return ogsalePolicy;
+    }
+
+    function getMarkerConfig() public view returns (MarketConfig memory) {
+        return marketConfig;
     }
 }

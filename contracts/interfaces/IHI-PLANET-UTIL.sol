@@ -8,7 +8,7 @@ import "./IHI-PLANET.sol";
  */
 interface IHI_PLANET_UTIL is IHIPLANET {
     /// @notice fnuction which calculate the total nft price by the mint amoint
-    function externalSaleBulkMintDiscount(uint8 _mintAmount, uint256 _price)
+    function publicSaleBulkMintDiscount(uint8 _mintAmount, uint256 _price)
         external
         pure
         returns (uint256);
@@ -71,5 +71,27 @@ interface IHI_PLANET_UTIL is IHIPLANET {
         view
         returns (uint256, uint256);
 
-    function getSecMarkDiff() external view returns (uint256);
+    /** @notice fnuction which get difference between current block number
+     *   and the block number of the secondary market(opensea or magic eden) activated time
+     */
+    function getSecMarketDiff() external view returns (uint256);
+
+    /**
+     * @notice used in NFT contract for getting complete uri of the token
+     * by combining base uri and token id
+     */
+    function getTokenURI(uint256 _tokenId, string memory _tokenURI)
+        external
+        view
+        returns (string memory);
+
+    function getConfig() external view returns (Config memory);
+
+    function getPublicPolicy() external view returns (MintPolicy memory);
+
+    function getPresalePolicy() external view returns (MintPolicy memory);
+
+    function getOgsalePolicy() external view returns (MintPolicy memory);
+
+    function getMarketConfig() external view returns (MarketConfig memory);
 }

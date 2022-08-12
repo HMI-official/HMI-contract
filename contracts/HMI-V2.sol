@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IHI-PLANET.sol";
+import "./interfaces/IHI-PLANET-UTIL.sol";
 
 // import "./ERC2981.sol";
 
@@ -18,13 +19,20 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    address internal proxy;
+    IHI_PLANET_UTIL internal proxy;
 
-    constructor() ERC721A("HI PLANET", "HMI") {}
+    mapping(address => uint256) public wlClaimed;
+    mapping(address => uint256) public ogClaimed;
+
+    constructor(address _proxy) ERC721A("HI PLANET", "HMI") {
+        proxy = IHI_PLANET_UTIL(_proxy);
+        // proxy.init();
+    }
 
     // 필수
     modifier mintCompliance(uint256 _mintAmount) {
         uint256 _totalSupply = totalSupply();
+        Config memory config = proxy.getConfig();
 
         require(
             _mintAmount > 0 && _mintAmount < config.maxMintAmountPerTx + 1,
@@ -89,10 +97,12 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             "ERC721Metadata: URI query for nonexistent token"
         );
 
+        Config memory config = proxy.getConfig();
+
         if (!config.revealed) {
-            return getTokenURI(_tokenId, config.hiddenURI);
+            return proxy.getTokenURI(_tokenId, config.hiddenURI);
         } else if (_tokenId <= config.maxSupply) {
-            return getTokenURI(_tokenId, config.baseURI);
+            return proxy.getTokenURI(_tokenId, config.baseURI);
         } else {
             return " ";
         }
@@ -110,10 +120,15 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(
-            publicSaleBulkMintDiscount(_mintAmount, publicPolicy.price),
+            proxy.publicSaleBulkMintDiscount(
+                _mintAmount,
+                proxy.getPublicPolicy().price
+            ),
             _mintAmount
         )
     {
+        MintPolicy memory publicPolicy = proxy.getPublicPolicy();
+        Config memory config = proxy.getConfig();
         require(!config.paused, "HMI: Contract is paused");
         require(!publicPolicy.paused, "HMI: The public sale is not enabled!");
         require(
@@ -125,31 +140,60 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         _safeMint(receiver, _mintAmount);
     }
 
+    function getIsValidMerkleProof(
+        bytes32[] calldata _merkleProof,
+        bytes32 _merkleRoot,
+        address _to
+    ) public view returns (bool) {
+        return
+            MerkleProof.verify(
+                _merkleProof,
+                _merkleRoot,
+                keccak256(abi.encodePacked(_to))
+            );
+    }
+
+    function getMintTimeComplianc(uint256 _mintStart, uint256 _mintEnd)
+        public
+        view
+        returns (bool)
+    {
+        return block.timestamp > _mintStart && block.timestamp < _mintEnd;
+    }
+
     function presaleMint(
         uint256 _mintAmount,
         address crossmintTo,
         address receiver,
         bytes32[] calldata _merkleProof
-    )
-        public
-        payable
-        onlyAccounts
-        mintCompliance(_mintAmount)
-        mintPriceCompliance(presalePolicy.price, _mintAmount)
-        isValidMerkleProof(_merkleProof, presalePolicy.merkleRoot, receiver)
-        mintTimeCompliance(presalePolicy.startTime, presalePolicy.endTime)
-    {
-        // uint8 _claimed = presalePolicy.claimed[receiver];
+    ) public payable onlyAccounts mintCompliance(_mintAmount) {
+        Config memory config = proxy.getConfig();
+        MintPolicy memory presalePolicy = proxy.getPresalePolicy();
+        // mintPriceCompliance(proxy.getPresalePolicy().price, _mintAmount);
+        bool _isValidMerkleProof = getIsValidMerkleProof(
+            _merkleProof,
+            presalePolicy.merkleRoot,
+            receiver
+        );
+        require(_isValidMerkleProof, "HMI: invalid merkle proof(wl)");
+
+        bool isMintTimeCompliance = getMintTimeComplianc(
+            presalePolicy.startTime,
+            presalePolicy.endTime
+        );
+
+        require(isMintTimeCompliance, "HMI: Minting time is not yet started!");
+
         require(!config.paused, "HMI: Contract is paused");
         require(!presalePolicy.paused, "HMI: Presale is OFF");
         require(
-            presalePolicy.claimed[receiver] + _mintAmount <
+            wlClaimed[receiver] + _mintAmount <
                 presalePolicy.maxMintAmountLimit + 1,
             "HMI: You can't mint so much tokens(wl)"
         );
 
         crossmintTo;
-        // wlClaimed[receiver] += _mintAmount;
+        wlClaimed[receiver] += _mintAmount;
         _safeMint(receiver, _mintAmount);
     }
 
@@ -157,29 +201,41 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         uint8 _mintAmount,
         bytes32[] calldata _merkleProof,
         address _to
-    )
-        public
-        payable
-        onlyAccounts
-        mintCompliance(_mintAmount)
-        isValidMerkleProof(_merkleProof, ogsalePolicy.merkleRoot, _to)
-        mintTimeCompliance(ogsalePolicy.startTime, ogsalePolicy.endTime)
-    {
+    ) public payable onlyAccounts mintCompliance(_mintAmount) {
+        Config memory config = proxy.getConfig();
+        MintPolicy memory ogsalePolicy = proxy.getOgsalePolicy();
+        address reciver = msg.sender;
+
+        bool _isValidMerkleProof = getIsValidMerkleProof(
+            _merkleProof,
+            ogsalePolicy.merkleRoot,
+            reciver
+        );
+        require(_isValidMerkleProof, "HMI: invalid merkle proof(wl)");
+
+        bool isMintTimeCompliance = getMintTimeComplianc(
+            ogsalePolicy.startTime,
+            ogsalePolicy.endTime
+        );
+
+        require(isMintTimeCompliance, "HMI: Minting time is not yet started!");
+
         require(!config.paused, "HMI: Contract is paused");
         require(!ogsalePolicy.paused, "HMI: og sale is OFF");
         require(
-            ogsalePolicy.claimed[_to] + _mintAmount <
+            ogClaimed[reciver] + _mintAmount <
                 ogsalePolicy.maxMintAmountLimit + 1,
             "HMI: You can't mint so much tokens(og)"
         );
 
-        ogsalePolicy.claimed[_to] += _mintAmount;
-        _safeMint(_to, _mintAmount);
+        ogClaimed[reciver] += _mintAmount;
+        _safeMint(reciver, _mintAmount);
     }
 
     // 특정 숫자가 되면 예를들어서
 
     function airdrop(address _to, uint256 _amount) public onlyOwner {
+        Config memory config = proxy.getConfig();
         require(
             totalSupply() + _amount <= config.maxSupply,
             "HMI: Max supply exceeded!"
@@ -192,6 +248,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     }
 
     function _baseURI() internal view override returns (string memory) {
+        Config memory config = proxy.getConfig();
         return config.baseURI;
     }
 
@@ -222,6 +279,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         uint256 startTokenId,
         uint256 quantity
     ) internal virtual override {
+        MarketConfig memory marketConfig = proxy.getMarketConfig();
         if (from != address(0)) {
             require(
                 marketConfig.activatedTime < block.timestamp ||
