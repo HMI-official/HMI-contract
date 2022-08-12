@@ -6,11 +6,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./interfaces/IHI-PLANET-UTIL.sol";
 
-contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
+contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
     using Strings for uint256;
     using SafeMath for uint256;
-    // wl price =>
-    // public price =>
 
     uint256 internal ether001 = 10**16;
     uint8 constant PUBLIC_INDEX = 0;
@@ -66,7 +64,10 @@ contract HiPlanetUtil is IHI_PLANET_UTIL, ReentrancyGuard {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(
+            msg.sender == owner,
+            "HI-PLANET: Only owner can call this function"
+        );
         _;
     }
 
