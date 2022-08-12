@@ -40,3 +40,5 @@ npx hardhat run scripts/deploy.ts --network rinkeby
 
 1. 여기서 네트워크 반드시 지정해줘야돼
 2. npx hardhat run이야 run까지 무조껀 해줘야돼
+3. 필수사이트( 이더리움 웨이 gwei)
+   https://www.eth-to-wei.com/?gclid=CjwKCAjw9NeXBhAMEiwAbaY4lvdmpfisQ_5unTqnAf32QBtaLI4Rcq7ZzCQpMoEIpEoJKf9cGWY_2hoCjSAQAvD_BwE

@@ -88,21 +88,15 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         uint8 _mintAmount,
         address crossmintTo,
         address receiver
-    )
-        public
-        payable
-        onlyAccounts
-        mintCompliance(_mintAmount)
-        mintPriceCompliance(
-            proxy.publicSaleBulkMintDiscount(
-                _mintAmount,
-                proxy.getPublicPolicy().price
-            ),
-            _mintAmount
-        )
-    {
+    ) public payable onlyAccounts mintCompliance(_mintAmount) {
         MintPolicy memory publicPolicy = proxy.getPublicPolicy();
         Config memory config = proxy.getConfig();
+        uint256 _price = proxy.publicSaleBulkMintDiscount(
+            _mintAmount,
+            publicPolicy.price
+        );
+
+        require(msg.value >= _price * _mintAmount, "Not ennough ether!");
         require(!config.paused, "HMI: Contract is paused");
         require(!publicPolicy.paused, "HMI: The public sale is not enabled!");
         require(
