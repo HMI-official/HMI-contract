@@ -5,23 +5,24 @@ import { diffDay, getUnixTime } from "../utils/day.js";
 
 // const data = new Date(1659957010 * 1000);
 // const MINTING_DATE = "8/25/2022 2:00:00 PM PST";
+const _MINTING_DATE = MINTING_DATE.wl.begin;
 
-const date = new Date(MINTING_DATE);
+const date = new Date(_MINTING_DATE);
 // to unix time
 const mintingDateUnix = getUnixTime(date);
 const now = getUnixTime(new Date());
-console.log(`${MINTING_DATE} : ${mintingDateUnix}`);
+console.log(`${_MINTING_DATE} : ${mintingDateUnix}`);
 
-const { day, hour, min, sec } = diffDay(MINTING_DATE);
+const { day, hour, min, sec } = diffDay(_MINTING_DATE);
 console.log(
-  `${MINTING_DATE} : ${day} days, ${hour} hours, ${min} minutes, ${sec} seconds`
+  `${_MINTING_DATE} : ${day} days, ${hour} hours, ${min} minutes, ${sec} seconds`
 );
 
-const remainingTime = diffDay(MINTING_DATE);
+const remainingTime = diffDay(_MINTING_DATE);
 
 const obj = {
   now,
-  mintBegin: { unix: mintingDateUnix, mintData: MINTING_DATE },
+  mintBegin: { unix: mintingDateUnix, mintData: _MINTING_DATE },
   remainingTime,
   timeGap: mintingDateUnix - now,
   copyToContract: mintingDateUnix,

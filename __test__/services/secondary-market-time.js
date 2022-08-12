@@ -8,7 +8,7 @@ const main = () => {
   // const date = new Date(MINTING_DATE);
   // to unix time
   const mintingDateUnix = getUnixTime(date);
-  const mintingDateUnixAddWeek = mintingDateUnix + 1 * UNIX_TIME.MINUTE;
+  const mintingDateUnixAddWeek = mintingDateUnix + 3 * UNIX_TIME.MINUTE;
 
   const obj = {
     release: mintingDateUnixAddWeek,

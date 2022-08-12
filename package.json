@@ -14,7 +14,7 @@
     "solidity-coverage": "^0.7.21"
   },
   "scripts": {
-    "dev": "cd contracts && remixd -s . --remix-ide https://remix.ethereum.org",
+    "dev": "cd contracts && remixd -s . --remix-ide https://remix.ethereum.org ",
     "mint-begin-time": "node __test__/services/mint-begin-time.js",
     "secondary-market-time": "node __test__/services/secondary-market-time.js"
   },

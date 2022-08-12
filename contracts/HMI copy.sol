@@ -8,93 +8,74 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./interfaces/IHIPLANET.sol";
 
 // import "./ERC2981.sol";
 
 // 최종적으로 이거 사용하기
 // TODO: 그리고 정확하게 minting time 정해놓기
-contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
+contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    struct MintTimePolicy {
-        uint256 startTime;
-        uint256 endTime;
-        string name;
-        uint16 index;
+    uint256 internal ether001 = 10**16;
+    uint8 constant PUBLIC_INDEX = 0;
+    uint8 constant PRESALE_INDEX = 1;
+    uint8 constant OG_INDEX = 2;
+
+    MarketConfig public marketConfig;
+    Config public config =
+        Config({
+            revealed: false,
+            maxSupply: 3333,
+            baseExtension: ".json",
+            baseURI: "",
+            hiddenURI: "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp",
+            maxMintAmountPerTx: 10,
+            paused: false
+        });
+
+    MintPolicy public publicPolicy;
+    MintPolicy public presalePolicy;
+    MintPolicy public ogsalePolicy;
+
+    function initPolicy() internal {
+        publicPolicy.price = ether001.div(10);
+        publicPolicy.startTime = 0;
+        publicPolicy.endTime = 0;
+        publicPolicy.name = "publicM";
+        publicPolicy.index = 0;
+        publicPolicy.paused = true;
+
+        presalePolicy.price = ether001.div(10);
+        presalePolicy.startTime = 0;
+        presalePolicy.endTime = 0;
+        presalePolicy.name = "presaleM";
+        presalePolicy.index = 1;
+        presalePolicy.paused = true;
+        presalePolicy.maxMintAmountLimit = 10;
+
+        ogsalePolicy.price = 0;
+        ogsalePolicy.startTime = 0;
+        ogsalePolicy.endTime = 0;
+        ogsalePolicy.name = "ogsaleM";
+        ogsalePolicy.index = 2;
+        ogsalePolicy.paused = true;
+        ogsalePolicy.maxMintAmountLimit = 1;
     }
-
-    struct PauseInfo {
-        bool paused;
-        bool presaleM;
-        bool publicM;
-        bool ogSaleM;
-    }
-
-    struct PriceInfo {
-        uint256 presale;
-        uint256 publicM;
-        uint256 ogSale;
-    }
-
-    // mapping(uint256 => uint256) public _stakingBegin;
-
-    mapping(address => uint256) public _presaleClaimed;
-    mapping(address => uint256) public _ogSaleClaimed;
-    mapping(string => MintTimePolicy) public _mintTimePolicy;
-
-    // mapping(uint256 => PhaseInfo) public _phaseInfo;
-    bool public revealed = false;
-
-    bytes32 public wlMerkleRoot;
-    bytes32 public ogMerkleRoot;
-
-    uint256 public maxSupply;
-
-    string public baseExtension = ".json";
-    string public baseURI;
-    string public hiddenURI =
-        "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp";
-
-    // 1 ether = 1000000000000000000
-    uint256 public presalePrice;
-    uint256 public publicSalePrice;
-
-    uint256 public presaleAmountLimit = 10;
-    uint256 public ogSaleAmountLimit = 1;
-
-    uint256 public maxMintAmountPerTx = 10;
-    uint256 public royaltyFee = 1000; // 1000 is 10%
-    uint256 public ether001 = 10**16;
-    // uint256 public ether001 = 10**16;
-
-    PauseInfo public pausedInfo;
-    // bool public paused = false;
-    // bool public presaleM = false;
-    // bool public publicM = false;
-    // bool public ogSaleM = false;
-
-    bool public secondaryMarketActivated = true;
-
-    uint256 public secondaryMarketActivatedTime;
-
-    // uint256 public mintingBeginTime;
-    // uint256 public ogMintingBeginTime;
-    // uint256 public wlMintingBeginTime;
-
-    // uint256 internal constant WEEK = 1 weeks;
 
     constructor() ERC721A("HI PLANET", "HMI") {
         // constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
         // _name = "HMI";
         // _symbol = "HMI";
         // ether001
-        publicSalePrice = ether001.div(10);
-        presalePrice = ether001.div(10);
+        initPolicy();
+        // publicPolicy.price = ether001.div(10);
+        // presalePolicy.price = ether001.div(10);
 
+        // config.maxSupply = 3333;
         // setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
         // setPresalePrice(ether001.div(10)); // => 0.007 ether
-        maxSupply = 3333;
         // setMaxMintAmountPerTx(10);
     }
 
@@ -103,19 +84,19 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         uint256 _totalSupply = totalSupply();
 
         require(
-            _mintAmount > 0 && _mintAmount < maxMintAmountPerTx + 1,
+            _mintAmount > 0 && _mintAmount < config.maxMintAmountPerTx + 1,
             "HMI: Invalid mint amount per tx!"
         );
 
         require(
-            _totalSupply + _mintAmount < maxSupply + 1,
+            _totalSupply + _mintAmount < config.maxSupply + 1,
             "HMI: Max supply exceeded!"
         );
         _;
     }
 
-    modifier mintPriceCompliance(uint256 price, uint256 _mintAmount) {
-        require(msg.value >= price * _mintAmount, "Not ennough ether!");
+    modifier mintPriceCompliance(uint256 _price, uint256 _mintAmount) {
+        require(msg.value >= _price * _mintAmount, "Not ennough ether!");
         _;
     }
 
@@ -156,29 +137,24 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     // this function used when public minting is on
     // TODO:
     // 이거 지금은 테스트중이라 public인데 pure이랑 internal로 바꾸기
-    function publicSaleBulkMintDiscount(uint256 _mintAmount, uint256 _price)
+    function publicSaleBulkMintDiscount(uint8 _mintAmount, uint256 _price)
         public
         pure
         returns (uint256)
     {
         // if user minted 10 tokens, discount is 20%
         if (_mintAmount == 10) return _price.mul(8).div(10);
-
         // if user minted more than 5 tokens, discount is 10%
         if (_mintAmount > 4) return _price.mul(9).div(10);
-
         return _price;
     }
 
-    function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
-        public
-        onlyOwner
-    {
-        maxMintAmountPerTx = _maxMintAmountPerTx;
+    function setMaxMintAmountPerTx(uint8 _maxMintAmountPerTx) public onlyOwner {
+        config.maxMintAmountPerTx = _maxMintAmountPerTx;
     }
 
-    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
-        maxSupply = _maxSupply;
+    function setMaxSupply(uint16 _maxSupply) public onlyOwner {
+        config.maxSupply = _maxSupply;
     }
 
     function tokenURI(uint256 _tokenId)
@@ -193,43 +169,42 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
             "ERC721Metadata: URI query for nonexistent token"
         );
 
-        if (!revealed) {
-            return getTokenURI(_tokenId, hiddenURI);
+        if (!config.revealed) {
+            return getTokenURI(_tokenId, config.hiddenURI);
+        } else if (_tokenId <= config.maxSupply) {
+            return getTokenURI(_tokenId, config.baseURI);
+        } else {
+            return " ";
         }
-
-        if (_tokenId <= maxSupply) {
-            return getTokenURI(_tokenId, baseURI);
-        }
-        return " ";
     }
 
     // 이거는 필수
     function togglePause() public onlyOwner {
-        pausedInfo.paused = !pausedInfo.paused;
+        config.paused = !config.paused;
     }
 
     function togglePresale() public onlyOwner {
-        pausedInfo.presaleM = !pausedInfo.presaleM;
+        config.paused = !config.paused;
     }
 
     function toggleOgsale() public onlyOwner {
-        pausedInfo.ogSaleM = !pausedInfo.ogSaleM;
+        ogsalePolicy.paused = !ogsalePolicy.paused;
     }
 
     function togglePublicSale() public onlyOwner {
-        pausedInfo.publicM = !pausedInfo.publicM;
+        publicPolicy.paused = !publicPolicy.paused;
     }
 
     function toggleReveal() public onlyOwner {
-        revealed = !revealed;
+        config.revealed = !config.revealed;
     }
 
-    function toggleSecondaryMarketActivated() public onlyOwner {
-        secondaryMarketActivated = !secondaryMarketActivated;
+    function toggleMarketActicated() public onlyOwner {
+        marketConfig.activated = !marketConfig.activated;
     }
 
     function publicSaleMint(
-        uint256 _mintAmount,
+        uint8 _mintAmount,
         address crossmintTo,
         address receiver
     )
@@ -238,14 +213,14 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         onlyAccounts
         mintCompliance(_mintAmount)
         mintPriceCompliance(
-            publicSaleBulkMintDiscount(_mintAmount, publicSalePrice),
+            publicSaleBulkMintDiscount(_mintAmount, publicPolicy.price),
             _mintAmount
         )
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.publicM, "HMI: The public sale is not enabled!");
+        require(!config.paused, "HMI: Contract is paused");
+        require(!publicPolicy.paused, "HMI: The public sale is not enabled!");
         require(
-            _mintTimePolicy["public"].startTime < block.timestamp,
+            publicPolicy.startTime < block.timestamp,
             "HMI: Minting comming soon!"
         );
 
@@ -263,26 +238,20 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         payable
         onlyAccounts
         mintCompliance(_mintAmount)
-        mintPriceCompliance(presalePrice, _mintAmount)
-        isValidMerkleProof(_merkleProof, wlMerkleRoot, receiver)
-        mintTimeCompliance(
-            _mintTimePolicy["wl"].startTime,
-            _mintTimePolicy["wl"].endTime
-        )
+        mintPriceCompliance(presalePolicy.price, _mintAmount)
+        isValidMerkleProof(_merkleProof, presalePolicy.merkleRoot, receiver)
+        mintTimeCompliance(presalePolicy.startTime, presalePolicy.endTime)
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.presaleM, "HMI: Presale is OFF");
-        // require(
-        //     _mintTimePolicy["wl"].startTime < block.timestamp,
-        //     "HMI: Minting comming soon!(wl)"
-        // );
+        require(!config.paused, "HMI: Contract is paused");
+        require(!presalePolicy.paused, "HMI: Presale is OFF");
         require(
-            _presaleClaimed[receiver] + _mintAmount < presaleAmountLimit + 1,
+            presalePolicy.claimed[receiver] + _mintAmount <
+                presalePolicy.maxMintAmountLimit + 1,
             "HMI: You can't mint so much tokens(wl)"
         );
 
         crossmintTo;
-        _presaleClaimed[receiver] += _mintAmount;
+        presalePolicy.claimed[receiver] += _mintAmount;
         _safeMint(receiver, _mintAmount);
     }
 
@@ -295,24 +264,18 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         payable
         onlyAccounts
         mintCompliance(_mintAmount)
-        isValidMerkleProof(_merkleProof, ogMerkleRoot, _to)
-        mintTimeCompliance(
-            _mintTimePolicy["og"].startTime,
-            _mintTimePolicy["og"].endTime
-        )
+        isValidMerkleProof(_merkleProof, ogsalePolicy.merkleRoot, _to)
+        mintTimeCompliance(ogsalePolicy.startTime, ogsalePolicy.endTime)
     {
-        require(!pausedInfo.paused, "HMI: Contract is paused");
-        require(pausedInfo.ogSaleM, "HMI: og sale is OFF");
-        // require(
-        //     ogMintingBeginTime < block.timestamp,
-        //     "HMI: Minting comming soon!(og)"
-        // );
+        require(!config.paused, "HMI: Contract is paused");
+        require(!ogsalePolicy.paused, "HMI: og sale is OFF");
         require(
-            _ogSaleClaimed[_to] + _mintAmount < ogSaleAmountLimit + 1,
+            ogsalePolicy.claimed[_to] + _mintAmount <
+                ogsalePolicy.maxMintAmountLimit + 1,
             "HMI: You can't mint so much tokens(og)"
         );
 
-        _ogSaleClaimed[_to] += _mintAmount;
+        ogsalePolicy.claimed[_to] += _mintAmount;
         _safeMint(_to, _mintAmount);
     }
 
@@ -320,18 +283,18 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
 
     function airdrop(address _to, uint256 _amount) public onlyOwner {
         require(
-            totalSupply() + _amount <= maxSupply,
+            totalSupply() + _amount <= config.maxSupply,
             "HMI: Max supply exceeded!"
         );
         _safeMint(_to, _amount);
     }
 
     function setWlMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
-        wlMerkleRoot = _merkleRoot;
+        presalePolicy.merkleRoot = _merkleRoot;
     }
 
     function setOgMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
-        ogMerkleRoot = _merkleRoot;
+        ogsalePolicy.merkleRoot = _merkleRoot;
     }
 
     function _startTokenId() internal view virtual override returns (uint256) {
@@ -339,45 +302,37 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     }
 
     function setBaseURI(string memory _tokenBaseURI) public onlyOwner {
-        baseURI = _tokenBaseURI;
+        config.baseURI = _tokenBaseURI;
     }
 
-    // uint256 startTime;
-    //     uint256 endTime;
-    //     string name;
-    //     uint16 index;
     function setMintTime(
+        uint8 _policyIndex,
         uint256 _mintStart,
-        uint256 _mintEnd,
-        string memory _name,
-        uint16 _index
+        uint256 _mintEnd
     ) public onlyOwner {
+        require(_policyIndex < 3, "HMI: Invalid index");
+        // PUBLIC_INDEX || 0
+        // PRESALE_INDEX || 1
+        // OG_INDEX || 2
         unchecked {
-            _mintTimePolicy[_name].startTime = _mintStart;
-            _mintTimePolicy[_name].endTime = _mintEnd;
-            _mintTimePolicy[_name].name = _name;
-            _mintTimePolicy[_name].index = _index;
+            if (_policyIndex == PUBLIC_INDEX) {
+                publicPolicy.startTime = _mintStart;
+                publicPolicy.endTime = _mintEnd;
+                return;
+            } else if (_policyIndex == PRESALE_INDEX) {
+                presalePolicy.startTime = _mintStart;
+                presalePolicy.endTime = _mintEnd;
+                return;
+            } else if (_policyIndex == OG_INDEX) {
+                ogsalePolicy.startTime = _mintStart;
+                ogsalePolicy.endTime = _mintEnd;
+                return;
+            }
         }
     }
 
-    // function setWlMintingBeginTime(uint256 _wlMintingBeginTime)
-    //     public
-    //     onlyOwner
-    // {
-    //     wlMintingBeginTime = _wlMintingBeginTime;
-    // }
-
-    // function setOgMintingBeginTime(uint256 _ogMintingBeginTime)
-    //     public
-    //     onlyOwner
-    // {
-    //     ogMintingBeginTime = _ogMintingBeginTime;
-    // }
-
-    function setSecondaryMarketActivatedTime(
-        uint256 _secondaryMarketActivatedTime
-    ) public onlyOwner {
-        secondaryMarketActivatedTime = _secondaryMarketActivatedTime;
+    function setMarketActivatedTime(uint256 _activatedTime) public onlyOwner {
+        marketConfig.activatedTime = _activatedTime;
     }
 
     function getCurBlock() public view returns (uint256) {
@@ -385,7 +340,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     }
 
     function _baseURI() internal view override returns (string memory) {
-        return baseURI;
+        return config.baseURI;
     }
 
     function withdraw() public onlyOwner nonReentrant {
@@ -406,7 +361,7 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
                     _tokenURI,
                     "/",
                     _tokenId.toString(),
-                    baseExtension
+                    config.baseExtension
                 )
             );
     }
@@ -425,21 +380,32 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
         return ownership.startTimestamp;
     }
 
-    // function getMintingBeginDiff(string memory _name, uint16 _time)
-    //     public
-    //     view
-    //     returns (uint256)
-    // {
-    //     uint256 _mintTime;
-    //     if (_time == 0) _mintTime = _mintTimePolicy[_name].startTime;
-    //     else _mintTime = _mintTimePolicy[_name].endTime;
-    //     uint256 _gap = _mintTime - block.timestamp;
-    //     if (_gap <= 0) return 0;
-    //     return _gap;
-    // }
+    function getMintTimeDiff(uint8 _policyIndex)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        uint256 startGap;
+        uint256 endGap;
+
+        if (_policyIndex == PUBLIC_INDEX) {
+            startGap = publicPolicy.startTime - block.timestamp;
+            endGap = publicPolicy.endTime - block.timestamp;
+        } else if (_policyIndex == PRESALE_INDEX) {
+            startGap = presalePolicy.startTime - block.timestamp;
+            endGap = presalePolicy.endTime - block.timestamp;
+        } else if (_policyIndex == OG_INDEX) {
+            startGap = ogsalePolicy.startTime - block.timestamp;
+            endGap = ogsalePolicy.endTime - block.timestamp;
+        }
+        if (startGap < 0) startGap = 0;
+        if (endGap < 0) endGap = 0;
+
+        return (startGap, endGap);
+    }
 
     function getSecMarkDiff() public view returns (uint256) {
-        uint256 _gap = secondaryMarketActivatedTime - block.timestamp;
+        uint256 _gap = marketConfig.activatedTime - block.timestamp;
         if (_gap <= 0) return 0;
         return _gap;
     }
@@ -452,12 +418,12 @@ contract HMI is ERC721AQueryable, Ownable, ReentrancyGuard {
     ) internal virtual override {
         if (from != address(0)) {
             require(
-                secondaryMarketActivatedTime < block.timestamp ||
-                    secondaryMarketActivatedTime == 0,
+                marketConfig.activatedTime < block.timestamp ||
+                    marketConfig.activatedTime == 0,
                 "HMI: Secondary market is not activated(time not yet come)"
             );
             require(
-                secondaryMarketActivated,
+                marketConfig.activated,
                 "HMI: Secondary market is not activated(contract owner blocked)"
             );
         }
