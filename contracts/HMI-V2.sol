@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./interfaces/IHIPLANET.sol";
+import "./interfaces/IHI-PLANET.sol";
 
 // import "./ERC2981.sol";
 
@@ -18,66 +18,9 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     using Strings for uint256;
     using SafeMath for uint256;
 
-    uint256 internal ether001 = 10**16;
-    uint8 constant PUBLIC_INDEX = 0;
-    uint8 constant PRESALE_INDEX = 1;
-    uint8 constant OG_INDEX = 2;
+    address internal proxy;
 
-    MarketConfig public marketConfig;
-    Config public config =
-        Config({
-            revealed: false,
-            maxSupply: 3333,
-            baseExtension: ".json",
-            baseURI: "",
-            hiddenURI: "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp",
-            maxMintAmountPerTx: 10,
-            paused: false
-        });
-
-    MintPolicy public publicPolicy;
-    MintPolicy public presalePolicy;
-    MintPolicy public ogsalePolicy;
-
-    function initPolicy() internal {
-        publicPolicy.price = ether001.div(10);
-        publicPolicy.startTime = 0;
-        publicPolicy.endTime = 0;
-        publicPolicy.name = "publicM";
-        publicPolicy.index = 0;
-        publicPolicy.paused = true;
-
-        presalePolicy.price = ether001.div(10);
-        presalePolicy.startTime = 0;
-        presalePolicy.endTime = 0;
-        presalePolicy.name = "presaleM";
-        presalePolicy.index = 1;
-        presalePolicy.paused = true;
-        presalePolicy.maxMintAmountLimit = 10;
-
-        ogsalePolicy.price = 0;
-        ogsalePolicy.startTime = 0;
-        ogsalePolicy.endTime = 0;
-        ogsalePolicy.name = "ogsaleM";
-        ogsalePolicy.index = 2;
-        ogsalePolicy.paused = true;
-        ogsalePolicy.maxMintAmountLimit = 1;
-    }
-
-    constructor() ERC721A("HI PLANET", "HMI") {
-        // constructor() ERC721A("_name HI PLANET", "_symbol HMI") {
-        // _name = "HMI";
-        // _symbol = "HMI";
-        // ether001
-        initPolicy();
-        // publicPolicy.price = ether001.div(10);
-        // presalePolicy.price = ether001.div(10);
-
-        // config.maxSupply = 3333;
-        // setPublicSalePrice(ether001.div(10)); // => 0.01 ether = 10finney
-        // setPresalePrice(ether001.div(10)); // => 0.007 ether
-        // setMaxMintAmountPerTx(10);
-    }
+    constructor() ERC721A("HI PLANET", "HMI") {}
 
     // 필수
     modifier mintCompliance(uint256 _mintAmount) {
@@ -134,29 +77,6 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         _;
     }
 
-    // this function used when public minting is on
-    // TODO:
-    // 이거 지금은 테스트중이라 public인데 pure이랑 internal로 바꾸기
-    function publicSaleBulkMintDiscount(uint8 _mintAmount, uint256 _price)
-        public
-        pure
-        returns (uint256)
-    {
-        // if user minted 10 tokens, discount is 20%
-        if (_mintAmount == 10) return _price.mul(8).div(10);
-        // if user minted more than 5 tokens, discount is 10%
-        if (_mintAmount > 4) return _price.mul(9).div(10);
-        return _price;
-    }
-
-    function setMaxMintAmountPerTx(uint8 _maxMintAmountPerTx) public onlyOwner {
-        config.maxMintAmountPerTx = _maxMintAmountPerTx;
-    }
-
-    function setMaxSupply(uint16 _maxSupply) public onlyOwner {
-        config.maxSupply = _maxSupply;
-    }
-
     function tokenURI(uint256 _tokenId)
         public
         view
@@ -178,30 +98,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         }
     }
 
-    // 이거는 필수
-    function togglePause() public onlyOwner {
-        config.paused = !config.paused;
-    }
-
-    function togglePresale() public onlyOwner {
-        config.paused = !config.paused;
-    }
-
-    function toggleOgsale() public onlyOwner {
-        ogsalePolicy.paused = !ogsalePolicy.paused;
-    }
-
-    function togglePublicSale() public onlyOwner {
-        publicPolicy.paused = !publicPolicy.paused;
-    }
-
-    function toggleReveal() public onlyOwner {
-        config.revealed = !config.revealed;
-    }
-
-    function toggleMarketActicated() public onlyOwner {
-        marketConfig.activated = !marketConfig.activated;
-    }
+    // // 이거는 필수
 
     function publicSaleMint(
         uint8 _mintAmount,
@@ -242,6 +139,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         isValidMerkleProof(_merkleProof, presalePolicy.merkleRoot, receiver)
         mintTimeCompliance(presalePolicy.startTime, presalePolicy.endTime)
     {
+        // uint8 _claimed = presalePolicy.claimed[receiver];
         require(!config.paused, "HMI: Contract is paused");
         require(!presalePolicy.paused, "HMI: Presale is OFF");
         require(
@@ -251,12 +149,12 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         );
 
         crossmintTo;
-        presalePolicy.claimed[receiver] += _mintAmount;
+        // wlClaimed[receiver] += _mintAmount;
         _safeMint(receiver, _mintAmount);
     }
 
     function ogSaleMint(
-        uint256 _mintAmount,
+        uint8 _mintAmount,
         bytes32[] calldata _merkleProof,
         address _to
     )
@@ -289,54 +187,8 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         _safeMint(_to, _amount);
     }
 
-    function setWlMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
-        presalePolicy.merkleRoot = _merkleRoot;
-    }
-
-    function setOgMerkleRoot(bytes32 _merkleRoot) public onlyOwner {
-        ogsalePolicy.merkleRoot = _merkleRoot;
-    }
-
     function _startTokenId() internal view virtual override returns (uint256) {
         return 1;
-    }
-
-    function setBaseURI(string memory _tokenBaseURI) public onlyOwner {
-        config.baseURI = _tokenBaseURI;
-    }
-
-    function setMintTime(
-        uint8 _policyIndex,
-        uint256 _mintStart,
-        uint256 _mintEnd
-    ) public onlyOwner {
-        require(_policyIndex < 3, "HMI: Invalid index");
-        // PUBLIC_INDEX || 0
-        // PRESALE_INDEX || 1
-        // OG_INDEX || 2
-        unchecked {
-            if (_policyIndex == PUBLIC_INDEX) {
-                publicPolicy.startTime = _mintStart;
-                publicPolicy.endTime = _mintEnd;
-                return;
-            } else if (_policyIndex == PRESALE_INDEX) {
-                presalePolicy.startTime = _mintStart;
-                presalePolicy.endTime = _mintEnd;
-                return;
-            } else if (_policyIndex == OG_INDEX) {
-                ogsalePolicy.startTime = _mintStart;
-                ogsalePolicy.endTime = _mintEnd;
-                return;
-            }
-        }
-    }
-
-    function setMarketActivatedTime(uint256 _activatedTime) public onlyOwner {
-        marketConfig.activatedTime = _activatedTime;
-    }
-
-    function getCurBlock() public view returns (uint256) {
-        return block.timestamp;
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -348,22 +200,6 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             ""
         );
         require(success, "HMI: Transfer failed.");
-    }
-
-    function getTokenURI(uint256 _tokenId, string memory _tokenURI)
-        public
-        view
-        returns (string memory)
-    {
-        return
-            string(
-                abi.encodePacked(
-                    _tokenURI,
-                    "/",
-                    _tokenId.toString(),
-                    config.baseExtension
-                )
-            );
     }
 
     function getTimeGap(uint256 tokenId) public view returns (uint256) {
@@ -378,36 +214,6 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     {
         TokenOwnership memory ownership = explicitOwnershipOf(tokenId);
         return ownership.startTimestamp;
-    }
-
-    function getMintTimeDiff(uint8 _policyIndex)
-        public
-        view
-        returns (uint256, uint256)
-    {
-        uint256 startGap;
-        uint256 endGap;
-
-        if (_policyIndex == PUBLIC_INDEX) {
-            startGap = publicPolicy.startTime - block.timestamp;
-            endGap = publicPolicy.endTime - block.timestamp;
-        } else if (_policyIndex == PRESALE_INDEX) {
-            startGap = presalePolicy.startTime - block.timestamp;
-            endGap = presalePolicy.endTime - block.timestamp;
-        } else if (_policyIndex == OG_INDEX) {
-            startGap = ogsalePolicy.startTime - block.timestamp;
-            endGap = ogsalePolicy.endTime - block.timestamp;
-        }
-        if (startGap < 0) startGap = 0;
-        if (endGap < 0) endGap = 0;
-
-        return (startGap, endGap);
-    }
-
-    function getSecMarkDiff() public view returns (uint256) {
-        uint256 _gap = marketConfig.activatedTime - block.timestamp;
-        if (_gap <= 0) return 0;
-        return _gap;
     }
 
     function _beforeTokenTransfers(
