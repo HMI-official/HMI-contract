@@ -29,7 +29,6 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         // proxy.init();
     }
 
-    // 필수
     modifier mintCompliance(uint256 _mintAmount) {
         uint256 _totalSupply = totalSupply();
         Config memory config = proxy.getConfig();
@@ -57,31 +56,6 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             "HMI: Contract call from another contract is not allowed"
         );
 
-        _;
-    }
-
-    // bytes32 _merkleRoot
-    modifier isValidMerkleProof(
-        bytes32[] calldata _merkleProof,
-        bytes32 _merkleRoot,
-        address _to
-    ) {
-        require(
-            MerkleProof.verify(
-                _merkleProof,
-                _merkleRoot,
-                keccak256(abi.encodePacked(_to))
-            ) == true,
-            "HMI:invalid merkle proof"
-        );
-        _;
-    }
-
-    modifier mintTimeCompliance(uint256 _mintStart, uint256 _mintEnd) {
-        require(
-            block.timestamp > _mintStart && block.timestamp < _mintEnd,
-            "HMI: Minting time is not yet started!"
-        );
         _;
     }
 
@@ -144,7 +118,7 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         bytes32[] calldata _merkleProof,
         bytes32 _merkleRoot,
         address _to
-    ) public view returns (bool) {
+    ) public pure returns (bool) {
         return
             MerkleProof.verify(
                 _merkleProof,
@@ -197,11 +171,12 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         _safeMint(receiver, _mintAmount);
     }
 
-    function ogSaleMint(
-        uint8 _mintAmount,
-        bytes32[] calldata _merkleProof,
-        address _to
-    ) public payable onlyAccounts mintCompliance(_mintAmount) {
+    function ogSaleMint(uint8 _mintAmount, bytes32[] calldata _merkleProof)
+        public
+        payable
+        onlyAccounts
+        mintCompliance(_mintAmount)
+    {
         Config memory config = proxy.getConfig();
         MintPolicy memory ogsalePolicy = proxy.getOgsalePolicy();
         address reciver = msg.sender;
@@ -257,6 +232,10 @@ contract HiPlnaet is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             ""
         );
         require(success, "HMI: Transfer failed.");
+    }
+
+    function setProxy(address _proxy) public onlyOwner {
+        proxy = IHI_PLANET_UTIL(_proxy);
     }
 
     function getTimeGap(uint256 tokenId) public view returns (uint256) {
