@@ -1,0 +1,16 @@
+{
+  "begin": {
+    "unix": 1660621800,
+    "mintDate": "8/15/2022 7:50:00 PM PST",
+    "remain": { "day": 0, "hour": 0, "min": 0, "sec": 0 },
+    "gap": -422,
+    "now": 1660622222
+  },
+  "end": {
+    "unix": 1660622100,
+    "mintDate": "8/15/2022 7:55:00 PM PST",
+    "remain": { "day": 0, "hour": 0, "min": 0, "sec": 0 },
+    "gap": -122,
+    "now": 1660622222
+  }
+}

@@ -22,3 +22,27 @@ export const getUnixTime = (date) => {
   const unixTime = (date.getTime() / 1000).toFixed(0);
   return Number(unixTime);
 };
+// 1660615359
+// 1660615411
+
+export const changeTimeZone = (date, timeZone) => {
+  if (typeof date === "string") {
+    return new Date(
+      new Date(date).toLocaleString("en-US", {
+        timeZone,
+      })
+    );
+  }
+
+  return new Date(
+    date.toLocaleString("en-US", {
+      timeZone,
+    })
+  );
+};
+
+// const laDate = changeTimeZone(new Date(), 'America/Los_Angeles');
+// console.log(laDate); // 👉️ "Sun Jan 16 2022 01:22:07"
+
+// const berlinDate = changeTimeZone(new Date(), 'Europe/Berlin');
+// console.log(berlinDate); // 👉️ "Sun Jan 16 2022 10:22:07"

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.16;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -76,11 +76,13 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
         pure
         returns (uint256)
     {
-        // if user minted 10 tokens, discount is 20%
-        if (_mintAmount == 10) return _price.mul(8).div(10);
-        // if user minted more than 5 tokens, discount is 10%
-        if (_mintAmount > 4) return _price.mul(9).div(10);
-        return _price;
+        unchecked {
+            // if user minted 10 tokens, discount is 20%
+            if (_mintAmount == 10) return _price.mul(8).div(10);
+            // if user minted more than 5 tokens, discount is 10%
+            if (_mintAmount > 4) return _price.mul(9).div(10);
+            return _price;
+        }
     }
 
     // 이거는 필수
@@ -230,7 +232,7 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
         return (startGap, endGap);
     }
 
-    function getSecMarketDiff() public view returns (uint256) {
+    function getSecMarketDiff() external view returns (uint256) {
         (bool _bool, uint256 _gap) = (marketConfig.activatedTime).trySub(
             block.timestamp
         );
@@ -239,7 +241,7 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
     }
 
     function getTokenURI(uint256 _tokenId, string memory _tokenURI)
-        public
+        external
         view
         returns (string memory)
     {
@@ -254,27 +256,65 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
             );
     }
 
-    function getConfig() public view returns (Config memory) {
-        return config;
+    function getConfig() external view returns (Config memory) {
+        unchecked {
+            return config;
+        }
     }
 
-    function getPublicPolicy() public view returns (MintPolicy memory) {
-        return publicPolicy;
+    function getPublicPolicy() external view returns (MintPolicy memory) {
+        unchecked {
+            return publicPolicy;
+        }
     }
 
-    function getPresalePolicy() public view returns (MintPolicy memory) {
-        return presalePolicy;
+    function getPresalePolicy() external view returns (MintPolicy memory) {
+        unchecked {
+            return presalePolicy;
+        }
     }
 
-    function getOgsalePolicy() public view returns (MintPolicy memory) {
-        return ogsalePolicy;
+    function getOgsalePolicy() external view returns (MintPolicy memory) {
+        unchecked {
+            return ogsalePolicy;
+        }
     }
 
-    function getMarketConfig() public view returns (MarketConfig memory) {
-        return marketConfig;
+    function getMarketConfig() external view returns (MarketConfig memory) {
+        unchecked {
+            return marketConfig;
+        }
     }
 
-    function getAddress() public view returns (address) {
+    function getAddress() external view returns (address) {
         return address(this);
+    }
+
+    function getMaxSupply() external view returns (uint16) {
+        return config.maxSupply;
+    }
+
+    function paused() external view returns (bool) {
+        return config.paused;
+    }
+
+    function publicM() external view returns (bool) {
+        return !publicPolicy.paused;
+    }
+
+    function presaleM() external view returns (bool) {
+        return !presalePolicy.paused;
+    }
+
+    function ogsaleM() external view returns (bool) {
+        return !ogsalePolicy.paused;
+    }
+
+    function price() external view returns (uint256) {
+        return publicPolicy.price;
+    }
+
+    function wlPrice() external view returns (uint256) {
+        return presalePolicy.price;
     }
 }

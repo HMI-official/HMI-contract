@@ -42,3 +42,6 @@ npx hardhat run scripts/deploy.ts --network rinkeby
 2. npx hardhat run이야 run까지 무조껀 해줘야돼
 3. 필수사이트( 이더리움 웨이 gwei)
    https://www.eth-to-wei.com/?gclid=CjwKCAjw9NeXBhAMEiwAbaY4lvdmpfisQ_5unTqnAf32QBtaLI4Rcq7ZzCQpMoEIpEoJKf9cGWY_2hoCjSAQAvD_BwE
+
+4. 컨트랙 인증할때 필요한 사이트
+   https://abi.hashex.org/

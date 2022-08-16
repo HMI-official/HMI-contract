@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.16;
 
 // import "erc721a/contracts/ERC721A.sol";
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
@@ -24,7 +24,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     mapping(address => uint256) public wlClaimed;
     mapping(address => uint256) public ogClaimed;
 
-    constructor(address _proxy) ERC721A("HI-PLANET", "HMI") {
+    constructor(address _proxy) ERC721A("HI-PLANET", "HI-PLANET") {
         proxy = IHI_PLANET_UTIL(_proxy);
         // proxy.init();
     }
@@ -102,9 +102,19 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             !publicPolicy.paused,
             "HI-PLANET: The public sale is not enabled!"
         );
+        // require(
+        //     publicPolicy.startTime < block.timestamp,
+        //     "HI-PLANET: Minting comming soon!"
+        // );
+
+        bool isMintTimeCompliance = getMintTimeCompliance(
+            publicPolicy.startTime,
+            publicPolicy.endTime
+        );
+
         require(
-            publicPolicy.startTime < block.timestamp,
-            "HI-PLANET: Minting comming soon!"
+            isMintTimeCompliance,
+            "HI-PLANET: Minting time is not yet started!"
         );
 
         crossmintTo;
@@ -168,15 +178,16 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
         _safeMint(receiver, _mintAmount);
     }
 
-    function ogSaleMint(uint8 _mintAmount, bytes32[] calldata _merkleProof)
+    function ogSaleMint(bytes32[] calldata _merkleProof)
         public
         payable
         onlyAccounts
-        mintCompliance(_mintAmount)
+        mintCompliance(1)
     {
         Config memory config = proxy.getConfig();
         MintPolicy memory ogsalePolicy = proxy.getOgsalePolicy();
         address reciver = msg.sender;
+        uint8 _mintAmount = 1;
 
         bool _isValidMerkleProof = getIsValidMerkleProof(
             _merkleProof,
@@ -244,7 +255,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     }
 
     function getMintTimeCompliance(uint256 _mintStart, uint256 _mintEnd)
-        public
+        internal
         view
         returns (bool)
     {

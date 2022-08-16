@@ -16,7 +16,8 @@
   "scripts": {
     "dev": "cd contracts && remixd -s . --remix-ide https://remix.ethereum.org ",
     "mint-begin-time": "node __test__/services/mint-begin-time.js",
-    "secondary-market-time": "node __test__/services/secondary-market-time.js"
+    "secondary-market-time": "node __test__/services/secondary-market-time.js",
+    "public-mint-time": "node __test__/services/mint-time/public-mint-time.js"
   },
   "devDependencies": {
     "prettier": "^2.6.2",
