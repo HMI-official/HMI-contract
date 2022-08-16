@@ -13,7 +13,6 @@ const main = () => {
   console.log(`file saved: ${folderPath}/test-time${EXT}`);
 };
 
-const time7H = 1 * 60 * 60 * 16;
 const getMintInfo = (mintDate) => {
   // 일단 유닉스 타임은 맞아
   const date = new Date(mintDate);

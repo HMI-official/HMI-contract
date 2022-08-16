@@ -11,8 +11,8 @@ export const MINTING_DATE = {
   wl: { begin: "8/22/2022 2:00:00 PM PST", end: "8/24/2022 2:00:00 PM PST" },
   public: { begin: "8/25/2022 2:00:00 PM PST", end: "TBD" },
   test: {
-    begin: "8/15/2022 7:50:00 PM PST",
-    end: "8/15/2022 7:55:00 PM PST",
+    begin: "8/15/2022 8:36:00 PM PST",
+    end: "8/15/2022 8:40:00 PM PST",
   },
 };
 // 8/21 2pm PST - 8/22 2pm PST (OG)
