@@ -102,10 +102,6 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
             !publicPolicy.paused,
             "HI-PLANET: The public sale is not enabled!"
         );
-        // require(
-        //     publicPolicy.startTime < block.timestamp,
-        //     "HI-PLANET: Minting comming soon!"
-        // );
 
         bool isMintTimeCompliance = getMintTimeCompliance(
             publicPolicy.startTime,
@@ -114,7 +110,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
 
         require(
             isMintTimeCompliance,
-            "HI-PLANET: Minting time is not yet started!"
+            "HI-PLANET: Minting time is not yet started or done!"
         );
 
         crossmintTo;
@@ -162,7 +158,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
 
         require(
             isMintTimeCompliance,
-            "HI-PLANET: Minting time is not yet started!"
+            "HI-PLANET: Minting time is not yet started or done!"
         );
 
         require(!config.paused, "HI-PLANET: Contract is paused");
@@ -203,7 +199,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
 
         require(
             isMintTimeCompliance,
-            "HI-PLANET: Minting time is not yet started!"
+            "HI-PLANET: Minting time is not yet started or done!"
         );
 
         require(!config.paused, "HI-PLANET: Contract is paused");

@@ -22,7 +22,7 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
             maxSupply: 3333,
             baseExtension: ".json",
             baseURI: "",
-            hiddenURI: "ipfs://QmcXG9QgbBocXuXHA3HukSDGF9aAEi88niNMspwvqRmaNp",
+            hiddenURI: "ipfs://bafybeihxtk5h3smwgv3gmvwp4s26djiwmwf4m3izpwhmwpfym5bxspzxni",
             maxMintAmountPerTx: 10,
             paused: false
         });
@@ -32,24 +32,27 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
     MintPolicy public ogsalePolicy;
 
     function initPolicy() internal {
-        publicPolicy.price = ether001.div(10);
-        publicPolicy.startTime = 0;
-        publicPolicy.endTime = 0;
+        // WL(0.09ETH), Public(0.12ETH)
+        // publicPolicy.price = ether001.div(10);
+        publicPolicy.price = ether001.mul(12);
+        publicPolicy.startTime = 1662674400;
+        publicPolicy.endTime = 1666735200;
         publicPolicy.name = "publicM";
         publicPolicy.index = 0;
         publicPolicy.paused = true;
 
-        presalePolicy.price = ether001.div(10);
-        presalePolicy.startTime = 0;
-        presalePolicy.endTime = 0;
+        // presalePolicy.price = ether001.div(10);
+        presalePolicy.price = ether001.mul(9);
+        presalePolicy.startTime = 1662501600;
+        presalePolicy.endTime = 1662588000;
         presalePolicy.name = "presaleM";
         presalePolicy.index = 1;
         presalePolicy.paused = true;
         presalePolicy.maxMintAmountLimit = 5;
 
         ogsalePolicy.price = 0;
-        ogsalePolicy.startTime = 0;
-        ogsalePolicy.endTime = 0;
+        ogsalePolicy.startTime = 1662328800;
+        ogsalePolicy.endTime = 1662415200;
         ogsalePolicy.name = "ogsaleM";
         ogsalePolicy.index = 2;
         ogsalePolicy.paused = true;
@@ -153,6 +156,19 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
         return true;
     }
 
+    function setConfig(
+        uint16 _maxSupply,
+        uint8 _maxMintAmountPerTx,
+        string memory _baseURI,
+        string memory _hiddenURI
+    ) public onlyOwner returns (bool) {
+        config.maxSupply = _maxSupply;
+        config.maxMintAmountPerTx = _maxMintAmountPerTx;
+        config.baseURI = _baseURI;
+        config.hiddenURI = _hiddenURI;
+        return true;
+    }
+
     function setMaxMintAmountPerTx(uint8 _maxMintAmountPerTx) public onlyOwner {
         config.maxMintAmountPerTx = _maxMintAmountPerTx;
     }
@@ -171,6 +187,10 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
 
     function setBaseURI(string memory _tokenBaseURI) public onlyOwner {
         config.baseURI = _tokenBaseURI;
+    }
+
+    function setHiddenURI(string memory _tokenHiddenURI) public onlyOwner {
+        config.hiddenURI = _tokenHiddenURI;
     }
 
     function setMintTime(

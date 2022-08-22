@@ -1,16 +1,16 @@
 {
   "begin": {
-    "unix": 1660624560,
-    "mintDate": "8/15/2022 8:36:00 PM PST",
-    "remain": { "day": 0, "hour": 0, "min": 0, "sec": 0 },
-    "gap": -279,
-    "now": 1660624839
+    "unix": 1662674400,
+    "mintDate": "9/8/2022 2:00:00 PM PST",
+    "remain": { "day": 17, "hour": 16, "min": 1, "sec": 28 },
+    "gap": 1526488,
+    "now": 1661147912
   },
   "end": {
-    "unix": 1660624800,
-    "mintDate": "8/15/2022 8:40:00 PM PST",
-    "remain": { "day": 0, "hour": 0, "min": 0, "sec": 0 },
-    "gap": -39,
-    "now": 1660624839
+    "unix": 1666735200,
+    "mintDate": "10/25/2022 2:00:00 PM PST",
+    "remain": { "day": 64, "hour": 16, "min": 1, "sec": 28 },
+    "gap": 5587288,
+    "now": 1661147912
   }
 }
