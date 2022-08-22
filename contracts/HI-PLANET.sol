@@ -11,10 +11,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IHI-PLANET.sol";
 import "./interfaces/IHI-PLANET-UTIL.sol";
 
-// import "./ERC2981.sol";
-
-// 최종적으로 이거 사용하기
-// TODO: 그리고 정확하게 minting time 정해놓기
 contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     using Strings for uint256;
     using SafeMath for uint256;
@@ -24,7 +20,7 @@ contract HIPLANET is ERC721AQueryable, Ownable, ReentrancyGuard, IHIPLANET {
     mapping(address => uint256) public wlClaimed;
     mapping(address => uint256) public ogClaimed;
 
-    constructor(address _proxy) ERC721A("HI-PLANET", "HI-PLANET") {
+    constructor(address _proxy) ERC721A("HIPLANETNFT", "HPN") {
         proxy = IHI_PLANET_UTIL(_proxy);
         // proxy.init();
     }

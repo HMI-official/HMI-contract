@@ -17,6 +17,10 @@ export const MINTING_DATE = {
     begin: "9/8/2022 2:00:00 PM PST",
     end: "10/25/2022 2:00:00 PM PST",
   },
+  market: {
+    begin: "9/15/2022 2:00:00 PM PST",
+    end: "9/15/2022 2:00:00 PM PST",
+  },
   test: {
     begin: "8/15/2022 8:36:00 PM PST",
     end: "8/15/2022 8:40:00 PM PST",

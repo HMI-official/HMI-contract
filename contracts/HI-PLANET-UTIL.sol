@@ -15,7 +15,10 @@ contract HIPLANET_UTIL is IHI_PLANET_UTIL, ReentrancyGuard {
     uint8 constant PRESALE_INDEX = 1;
     uint8 constant OG_INDEX = 2;
 
-    MarketConfig public marketConfig;
+    MarketConfig public marketConfig =
+        MarketConfig({activated: false, activatedTime: 1662674400 + 1 weeks});
+    // 1663279200
+
     Config public config =
         Config({
             revealed: false,
